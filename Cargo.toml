@@ -1,0 +1,11 @@
+[package]
+name = "mca_collisions"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+fastnbt = "2" # for reading mc world
+fastanvil = "0.26.0" # for reading mc world
+serde = "1.0.136" # for serializing result
