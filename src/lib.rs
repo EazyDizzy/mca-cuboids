@@ -1,11 +1,14 @@
+#![feature(test)]
+#[cfg(test)]
+extern crate test;
 use crate::merge::merge_voxels;
 use crate::voxel_stack::VoxelStack;
 
-mod convert;
-mod voxel_plate;
-mod voxel_stack;
 mod merge;
+pub mod read;
+mod voxel_plate;
 mod voxel_sequence;
+mod voxel_stack;
 
 #[derive(Debug)]
 pub struct Vec3 {
@@ -19,17 +22,7 @@ fn vec3(x: isize, y: isize, z: isize) -> Vec3 {
 }
 
 pub fn parse(lvl_path: &str) {
-    let lvl = convert::read_level(lvl_path);
+    let lvl = read::read_level(lvl_path);
     let stack = VoxelStack::from(lvl);
     let collisions = merge_voxels(&stack);
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        parse("./assets/simple_lvl")
-    }
 }

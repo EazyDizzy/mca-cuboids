@@ -9,3 +9,10 @@ edition = "2021"
 fastnbt = "2" # for reading mc world
 fastanvil = "0.26.0" # for reading mc world
 serde = "1.0.136" # for serializing result
+
+[dev-dependencies]
+criterion = "0.3.6"
+
+[[bench]]
+name = "read"
+harness = false
