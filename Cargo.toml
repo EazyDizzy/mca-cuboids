@@ -3,7 +3,10 @@ name = "mca_collisions"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
 
 [dependencies]
 fastnbt = "2" # for reading mc world
@@ -12,7 +15,11 @@ serde = "1.0.136" # for serializing result
 
 [dev-dependencies]
 criterion = "0.3.6"
+pprof = { version = "0.10.0", features = ["criterion", "flamegraph"] }
 
 [[bench]]
 name = "read"
+harness = false
+[[bench]]
+name = "merge"
 harness = false

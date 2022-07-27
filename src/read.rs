@@ -1,15 +1,12 @@
-use std::any::Any;
 use std::fs::{DirEntry, File};
-use std::io::Write;
 use std::os::unix::prelude::MetadataExt;
-use std::sync::mpsc::{channel, Sender};
+use std::sync::mpsc::channel;
 use std::{fs, thread};
 
 use crate::{vec3, Vec3};
-use fastanvil::{Block, Chunk, CurrentJavaChunk, Region};
+use fastanvil::{Chunk, CurrentJavaChunk, Region};
 use fastnbt::from_bytes;
 
-const LVL_DIR: &str = "./assets/lvl/";
 const CHUNK_BLOCKS_SIZE: usize = 16;
 const FILE_CHUNKS_SIZE: isize = 32;
 
@@ -59,7 +56,7 @@ pub fn read_level(lvl_path: &str) -> Vec<Vec3> {
     all_voxels
 }
 
-pub fn read_level_file(dir_entry: &DirEntry) -> Vec<Vec3> {
+fn read_level_file(dir_entry: &DirEntry) -> Vec<Vec3> {
     let mut voxels = vec![];
 
     let (path, filename) = (
@@ -91,9 +88,9 @@ pub fn read_level_file(dir_entry: &DirEntry) -> Vec<Vec3> {
         let chunk: CurrentJavaChunk =
             from_bytes(bytes.as_slice()).expect("Cannot parse chunk data.");
 
-        for x in 0..CHUNK_BLOCKS_SIZE {
-            for z in 0..CHUNK_BLOCKS_SIZE {
-                for y in chunk.y_range() {
+        for y in chunk.y_range() {
+            for x in 0..CHUNK_BLOCKS_SIZE {
+                for z in 0..CHUNK_BLOCKS_SIZE {
                     if let Some(block) = chunk.block(x, y, z) {
                         if block.name() != "minecraft:air" {
                             let mut voxel_x = ((chunk_x * CHUNK_BLOCKS_SIZE) + x) as isize;
@@ -118,4 +115,14 @@ pub fn read_level_file(dir_entry: &DirEntry) -> Vec<Vec3> {
     });
 
     voxels
+}
+
+#[test]
+fn test_read_level_file() {
+    let lvl_path = "./assets/simple_lvl";
+    let v = read_level(lvl_path);
+    let max_x = v.iter().max_by(|a, b| a.y.cmp(&b.y));
+
+    dbg!(v.len());
+    dbg!(max_x);
 }

@@ -1,13 +1,17 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use mca_collisions::read::read_level;
 use pprof::criterion::{Output, PProfProfiler};
+use mca_collisions::merge::merge_voxels;
+use mca_collisions::voxel_stack::VoxelStack;
 
-fn bench_read_lvl(c: &mut Criterion) {
-    let mut group = c.benchmark_group("read_lvl");
+fn bench_merge(c: &mut Criterion) {
+    let lvl = read_level("./assets/simple_lvl");
+    let stack = VoxelStack::from(lvl);
+    let mut group = c.benchmark_group("merge");
     group.sample_size(10);
 
-    group.bench_function("read_level", |b| {
-        b.iter(|| read_level("./assets/simple_lvl"))
+    group.bench_function("merge", |b| {
+        b.iter(|| merge_voxels(stack.clone()))
     });
 
     group.finish()
@@ -16,6 +20,6 @@ fn bench_read_lvl(c: &mut Criterion) {
 criterion_group! {
     name = benches;
     config = Criterion::default().with_profiler(PProfProfiler::new(100, Output::Flamegraph(None)));
-    targets = bench_read_lvl
+    targets = bench_merge
 }
 criterion_main!(benches);

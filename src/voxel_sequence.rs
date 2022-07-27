@@ -1,16 +1,17 @@
 use crate::Vec3;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug)]
-pub struct VoxelSequence<'a> {
-    start: &'a Vec3,
-    end: &'a Vec3,
+#[derive(Debug, Serialize, Deserialize)]
+pub struct VoxelSequence {
+    start: Vec3,
+    end: Vec3,
 }
 
-impl<'a> VoxelSequence<'a> {
-    pub fn new(voxels: Vec<&'a Vec3>) -> VoxelSequence<'a> {
+impl VoxelSequence {
+    pub fn new(voxels: Vec<Vec3>) -> VoxelSequence {
         VoxelSequence {
-            start: voxels.first().unwrap(),
-            end: voxels.last().unwrap(),
+            start: voxels.first().unwrap().clone(),
+            end: voxels.last().unwrap().clone(),
         }
     }
 
@@ -31,12 +32,10 @@ impl<'a> VoxelSequence<'a> {
     }
 
     pub fn same_x_size(&self, other: &Self) -> bool {
-        other.start.x == self.start.x
-            && other.end.x == self.end.x
+        other.start.x == self.start.x && other.end.x == self.end.x
     }
     pub fn same_z_size(&self, other: &Self) -> bool {
-        other.start.z == self.start.z
-            && other.end.z == self.end.z
+        other.start.z == self.start.z && other.end.z == self.end.z
     }
 
     pub fn has_z_end_on(&self, z: isize) -> bool {

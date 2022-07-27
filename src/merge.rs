@@ -2,14 +2,13 @@ use crate::voxel_sequence::VoxelSequence;
 use crate::voxel_stack::VoxelStack;
 use crate::Vec3;
 
-pub fn merge_voxels(voxel_stack: &VoxelStack) -> Vec<VoxelSequence> {
+pub fn merge_voxels(voxel_stack: VoxelStack) -> Vec<VoxelSequence> {
     let mut all_sequences = vec![];
 
     for (y, plate) in voxel_stack.plates() {
         let mut plane_sequences = vec![];
 
         for (z, row) in plate.rows() {
-            let row: Vec<&Vec3> = row.iter().collect();
             let row_sequences = merge_voxels_x_row(row);
 
             plane_sequences = stretch_sequences_by_z(row_sequences, plane_sequences, z);
@@ -21,16 +20,16 @@ pub fn merge_voxels(voxel_stack: &VoxelStack) -> Vec<VoxelSequence> {
     all_sequences
 }
 
-fn stretch_sequences_by_y<'a>(
-    mut plane_sequences: Vec<VoxelSequence<'a>>,
-    mut all_sequences: Vec<VoxelSequence<'a>>,
+fn stretch_sequences_by_y(
+    mut plane_sequences: Vec<VoxelSequence>,
+    mut all_sequences: Vec<VoxelSequence>,
     y: isize,
-) -> Vec<VoxelSequence<'a>> {
+) -> Vec<VoxelSequence> {
     let needed_y = y - 1;
     let previous_layer_sequences = all_sequences
         .iter_mut()
         .filter(|s| s.has_y_end_on(needed_y))
-        .collect::<Vec<&mut VoxelSequence<'a>>>();
+        .collect::<Vec<&mut VoxelSequence>>();
 
     for seq in previous_layer_sequences {
         let same_new_seq = plane_sequences
@@ -49,11 +48,11 @@ fn stretch_sequences_by_y<'a>(
     all_sequences
 }
 
-fn stretch_sequences_by_z<'a>(
-    row_sequences: Vec<VoxelSequence<'a>>,
-    mut plane_sequences: Vec<VoxelSequence<'a>>,
+fn stretch_sequences_by_z(
+    row_sequences: Vec<VoxelSequence>,
+    mut plane_sequences: Vec<VoxelSequence>,
     z: isize,
-) -> Vec<VoxelSequence<'a>> {
+) -> Vec<VoxelSequence> {
     let mut sequences_to_append = vec![];
     let mut prev_row_sequences: Vec<&mut VoxelSequence> = plane_sequences
         .iter_mut()
@@ -77,7 +76,7 @@ fn stretch_sequences_by_z<'a>(
     plane_sequences
 }
 
-fn merge_voxels_x_row(mut row: Vec<&Vec3>) -> Vec<VoxelSequence> {
+fn merge_voxels_x_row(mut row: Vec<Vec3>) -> Vec<VoxelSequence> {
     row.sort_by(|a, b| a.x.partial_cmp(&b.x).unwrap());
 
     let mut x_sequences = vec![];
@@ -85,7 +84,7 @@ fn merge_voxels_x_row(mut row: Vec<&Vec3>) -> Vec<VoxelSequence> {
     let mut prev_voxel_index = 0;
 
     for (index, voxel) in row.iter().enumerate().skip(1) {
-        let prev_voxel = row[prev_voxel_index];
+        let prev_voxel = &row[prev_voxel_index];
         let stop_concatenation = voxel.x != prev_voxel.x + 1;
 
         if stop_concatenation {
