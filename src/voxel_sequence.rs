@@ -8,7 +8,7 @@ pub struct VoxelSequence {
 }
 
 impl VoxelSequence {
-    pub fn new(voxels: Vec<Vec3>) -> VoxelSequence {
+    pub(crate) fn new(voxels: Vec<Vec3>) -> VoxelSequence {
         VoxelSequence {
             start: voxels.first().unwrap().clone(),
             end: voxels.last().unwrap().clone(),
