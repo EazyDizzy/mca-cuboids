@@ -21,9 +21,9 @@ pub struct ExportParams {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Default)]
 pub struct Vec3 {
-    x: isize,
-    y: isize,
-    z: isize,
+    pub x: isize,
+    pub y: isize,
+    pub z: isize,
 }
 
 pub fn vec3(x: isize, y: isize, z: isize) -> Vec3 {
