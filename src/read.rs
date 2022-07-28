@@ -2,6 +2,7 @@ use std::fs::{DirEntry, File};
 use std::ops::RangeInclusive;
 use std::os::unix::prelude::MetadataExt;
 use std::sync::mpsc::channel;
+use std::sync::Arc;
 use std::{cmp, fs, thread};
 
 use crate::{vec3, ExportParams, Vec3};
@@ -30,12 +31,14 @@ pub(crate) fn read_level(lvl_path: &str, params: ExportParams) -> Vec<Vec3> {
     let (sender, receiver) = channel();
     let amount_of_files = files.len();
 
+    let export_params = Arc::new(params);
+
     for dir_entry in files {
+        let p = export_params.clone();
         let own_sender = sender.clone();
-        let p = params.clone();
 
         thread::spawn(move || {
-            let voxels = read_level_file(&dir_entry, p);
+            let voxels = read_level_file(&dir_entry, &p);
 
             own_sender
                 .send(voxels)
@@ -58,8 +61,13 @@ pub(crate) fn read_level(lvl_path: &str, params: ExportParams) -> Vec<Vec3> {
     all_voxels
 }
 
-fn read_level_file(dir_entry: &DirEntry, params: ExportParams) -> Vec<Vec3> {
+fn read_level_file(dir_entry: &DirEntry, params: &ExportParams) -> Vec<Vec3> {
     let mut voxels = vec![];
+    let blocks_to_skip: Vec<&str> = params
+        .skip_blocks
+        .iter()
+        .map(std::ops::Deref::deref)
+        .collect();
 
     let (path, filename) = (
         dir_entry
@@ -123,7 +131,10 @@ fn read_level_file(dir_entry: &DirEntry, params: ExportParams) -> Vec<Vec3> {
                     if x_range.contains(&voxel_x) && z_range.contains(&voxel_z) {
                         chunk
                             .block(x, y, z)
-                            .filter(|block| block.name() != "minecraft:air")
+                            .filter(|block| {
+                                block.name() != "minecraft:air"
+                                    && !blocks_to_skip.contains(&block.name())
+                            })
                             .map(|_block| {
                                 let point = vec3(voxel_x, y, voxel_z);
 
@@ -192,13 +203,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn read_level_1() {
+    fn read_level_export_range_1() {
         let result = read_level(
             "./assets/test_lvl",
             ExportParams {
                 start: vec3(1, -63, 1),
                 end: vec3(2, -63, 2),
-                skip_blocks: None,
+                ..Default::default()
             },
         );
         assert_eq!(
@@ -211,26 +222,56 @@ mod tests {
             ]
             .as_slice()
         );
-    }#[test]
-    fn read_level_2() {
+    }
+    #[test]
+    fn read_level_export_range_2() {
         let result = read_level(
             "./assets/test_lvl",
             ExportParams {
                 start: vec3(1, -63, 5),
                 end: vec3(2, -60, 6),
-                skip_blocks: None,
+                ..Default::default()
             },
         );
         assert_eq!(
             result.as_slice(),
-            vec![
-                vec3(1, -63, 5),
-                vec3(1, -62, 5),
-                vec3(1, -61, 5),
-            ]
-            .as_slice()
+            vec![vec3(1, -63, 5), vec3(1, -62, 5), vec3(1, -61, 5),].as_slice()
         );
     }
+
+    #[test]
+    fn read_level_skip_blocks_1() {
+        let result = read_level(
+            "./assets/test_lvl",
+            ExportParams {
+                start: vec3(1, -63, 1),
+                end: vec3(2, -63, 2),
+                skip_blocks: vec!["minecraft:stone".to_owned()],
+            },
+        );
+        assert_eq!(result, vec![]);
+    }
+    #[test]
+    fn read_level_skip_blocks_2() {
+        let result = read_level(
+            "./assets/test_lvl",
+            ExportParams {
+                start: vec3(1, -64, 1),
+                end: vec3(2, -63, 2),
+                skip_blocks: vec!["minecraft:stone".to_owned()],
+            },
+        );
+        assert_eq!(
+            result,
+            vec![
+                vec3(1, -64, 1),
+                vec3(1, -64, 2),
+                vec3(2, -64, 1),
+                vec3(2, -64, 2),
+            ]
+        );
+    }
+
     #[test]
     fn get_chunk_ranges_1() {
         assert_eq!(get_chunk_coordinate_ranges(-1, -10, -2), -10..=-2);
@@ -243,16 +284,16 @@ mod tests {
         let result = get_needed_filenames(&ExportParams {
             start: vec3(-1, 0, -1),
             end: vec3(1, 0, 1),
-            skip_blocks: None,
+            ..Default::default()
         });
 
         assert_eq!(
             result,
             vec![
-                String::from("-1.-1.mca"),
-                String::from("-1.0.mca"),
-                String::from("0.-1.mca"),
-                String::from("0.0.mca")
+                String::from("r.-1.-1.mca"),
+                String::from("r.-1.0.mca"),
+                String::from("r.0.-1.mca"),
+                String::from("r.0.0.mca")
             ]
         );
     }
@@ -261,49 +302,49 @@ mod tests {
         let result = get_needed_filenames(&ExportParams {
             start: vec3(1, 0, 1),
             end: vec3(2, 0, 2),
-            skip_blocks: None,
+            ..Default::default()
         });
 
-        assert_eq!(result, vec![String::from("0.0.mca")]);
+        assert_eq!(result, vec![String::from("r.0.0.mca")]);
     }
     #[test]
     fn get_needed_filenames_1_0() {
         let result = get_needed_filenames(&ExportParams {
             start: vec3(513, 1, 1),
             end: vec3(523, 1, 2),
-            skip_blocks: None,
+            ..Default::default()
         });
 
-        assert_eq!(result, vec![String::from("1.0.mca")]);
+        assert_eq!(result, vec![String::from("r.1.0.mca")]);
     }
     #[test]
     fn get_needed_filenames_0_1() {
         let result = get_needed_filenames(&ExportParams {
             start: vec3(1, 1, 513),
             end: vec3(2, 1, 523),
-            skip_blocks: None,
+            ..Default::default()
         });
 
-        assert_eq!(result, vec![String::from("0.1.mca")]);
+        assert_eq!(result, vec![String::from("r.0.1.mca")]);
     }
     #[test]
     fn get_needed_filenames_1_1() {
         let result = get_needed_filenames(&ExportParams {
             start: vec3(513, 1, 513),
             end: vec3(513, 1, 523),
-            skip_blocks: None,
+            ..Default::default()
         });
 
-        assert_eq!(result, vec![String::from("1.1.mca")]);
+        assert_eq!(result, vec![String::from("r.1.1.mca")]);
     }
     #[test]
     fn get_needed_filenames_minus_2_2() {
         let result = get_needed_filenames(&ExportParams {
             start: vec3(-513, 1, -513),
             end: vec3(-513, 1, -523),
-            skip_blocks: None,
+            ..Default::default()
         });
 
-        assert_eq!(result, vec![String::from("-2.-2.mca")]);
+        assert_eq!(result, vec![String::from("r.-2.-2.mca")]);
     }
 }

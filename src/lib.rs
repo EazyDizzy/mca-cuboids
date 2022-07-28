@@ -12,14 +12,14 @@ mod voxel_plate;
 mod voxel_sequence;
 mod voxel_stack;
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct ExportParams {
     start: Vec3,
     end: Vec3,
-    skip_blocks: Option<Vec<String>>,
+    skip_blocks: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Default)]
 pub struct Vec3 {
     x: isize,
     y: isize,
