@@ -14,9 +14,9 @@ mod voxel_stack;
 
 #[derive(Clone, Default)]
 pub struct ExportParams {
-    start: Vec3,
-    end: Vec3,
-    skip_blocks: Vec<String>,
+    pub start: Vec3,
+    pub end: Vec3,
+    pub skip_blocks: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Default)]
