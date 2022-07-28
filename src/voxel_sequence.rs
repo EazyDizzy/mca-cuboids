@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub struct VoxelSequence {
-    start: Vec3,
-    end: Vec3,
+    pub start: Vec3,
+    pub end: Vec3,
 }
 
 impl VoxelSequence {

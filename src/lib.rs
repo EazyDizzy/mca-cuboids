@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 mod merge;
 mod read;
 mod voxel_plate;
-mod voxel_sequence;
+pub mod voxel_sequence;
 mod voxel_stack;
 
 #[derive(Clone, Default)]
