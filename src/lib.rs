@@ -36,21 +36,95 @@ pub fn detect_collisions(lvl_path: &str, params: ExportParams) -> Vec<VoxelSeque
     merge_voxels(stack)
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//
-//     #[test]
-//     fn combine_2x2x1() {
-//         let result = detect_collisions(
-//             "./assets/test_lvl",
-//             ExportParams {
-//                 start: vec3(1, 1, 1),
-//                 end: vec3(2, 1, 2),
-//                 skip_blocks: None,
-//             },
-//         );
-//
-//         dbg!(result);
-//     }
-// }
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn detect_collisions_2x2x1() {
+        let result = detect_collisions(
+            "./assets/test_lvl",
+            ExportParams {
+                start: vec3(1, -63, 1),
+                end: vec3(2, -63, 2),
+                ..Default::default()
+            },
+        );
+
+        assert_eq!(
+            result,
+            vec![VoxelSequence::new(vec3(1, -63, 1), vec3(2, -63, 2))]
+        );
+    }
+    #[test]
+    fn detect_collisions_1x3x1() {
+        let result = detect_collisions(
+            "./assets/test_lvl",
+            ExportParams {
+                start: vec3(1, -63, 5),
+                end: vec3(2, -60, 6),
+                ..Default::default()
+            },
+        );
+
+        assert_eq!(
+            result,
+            vec![VoxelSequence::new(vec3(1, -63, 5), vec3(1, -61, 5))]
+        );
+    }
+    #[test]
+    fn detect_collisions_2x2x2() {
+        let result = detect_collisions(
+            "./assets/test_lvl",
+            ExportParams {
+                start: vec3(1, -63, 8),
+                end: vec3(4, -60, 10),
+                ..Default::default()
+            },
+        );
+
+        assert_eq!(
+            result,
+            vec![VoxelSequence::new(vec3(1, -63, 8), vec3(2, -62, 9))]
+        );
+    }
+    #[test]
+    fn detect_collisions_tetris() {
+        let result = detect_collisions(
+            "./assets/test_lvl",
+            ExportParams {
+                start: vec3(1, -63, 11),
+                end: vec3(4, -60, 12),
+                ..Default::default()
+            },
+        );
+
+        assert_eq!(
+            result,
+            vec![
+                VoxelSequence::new(vec3(1, -63, 11), vec3(2, -63, 11)),
+                VoxelSequence::new(vec3(1, -63, 12), vec3(1, -63, 12))
+            ]
+        );
+    }
+    #[test]
+    fn detect_collisions_chess() {
+        let result = detect_collisions(
+            "./assets/test_lvl",
+            ExportParams {
+                start: vec3(1, -63, 13),
+                end: vec3(4, -60, 15),
+                ..Default::default()
+            },
+        );
+
+        assert_eq!(
+            result,
+            vec![
+                VoxelSequence::new(vec3(1, -63, 14), vec3(1, -63, 14)),
+                VoxelSequence::new(vec3(3, -63, 14), vec3(3, -63, 14)),
+                VoxelSequence::new(vec3(2, -63, 15), vec3(2, -63, 15)),
+            ]
+        );
+    }
+}

@@ -1,18 +1,15 @@
 use crate::Vec3;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub struct VoxelSequence {
     start: Vec3,
     end: Vec3,
 }
 
 impl VoxelSequence {
-    pub(crate) fn new(voxels: Vec<Vec3>) -> VoxelSequence {
-        VoxelSequence {
-            start: voxels.first().unwrap().clone(),
-            end: voxels.last().unwrap().clone(),
-        }
+    pub(crate) fn new(start: Vec3, end: Vec3) -> VoxelSequence {
+        VoxelSequence { start, end }
     }
 
     pub fn expand_y_end(&mut self, other: Self) {

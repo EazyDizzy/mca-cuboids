@@ -89,7 +89,8 @@ fn merge_voxels_x_row(mut row: Vec<Vec3>) -> Vec<VoxelSequence> {
 
         if stop_concatenation {
             x_sequences.push(VoxelSequence::new(
-                row[start_voxel_index..=prev_voxel_index].to_vec(),
+                row[start_voxel_index].clone(),
+                row[prev_voxel_index].clone(),
             ));
 
             start_voxel_index = index;
@@ -98,7 +99,8 @@ fn merge_voxels_x_row(mut row: Vec<Vec3>) -> Vec<VoxelSequence> {
         prev_voxel_index = index;
     }
     x_sequences.push(VoxelSequence::new(
-        row[start_voxel_index..=prev_voxel_index].to_vec(),
+        row[start_voxel_index].clone(),
+        row[prev_voxel_index].clone(),
     ));
 
     x_sequences

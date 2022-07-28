@@ -213,14 +213,14 @@ mod tests {
             },
         );
         assert_eq!(
-            result.as_slice(),
+            result,
             vec![
                 vec3(1, -63, 1),
                 vec3(1, -63, 2),
                 vec3(2, -63, 1),
                 vec3(2, -63, 2),
             ]
-            .as_slice()
+
         );
     }
     #[test]
@@ -234,8 +234,8 @@ mod tests {
             },
         );
         assert_eq!(
-            result.as_slice(),
-            vec![vec3(1, -63, 5), vec3(1, -62, 5), vec3(1, -61, 5),].as_slice()
+            result,
+            vec![vec3(1, -63, 5), vec3(1, -62, 5), vec3(1, -61, 5),]
         );
     }
 
