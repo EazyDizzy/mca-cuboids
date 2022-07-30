@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::Vec3;
+use crate::BlockCoordinates;
 use crate::voxel_plate::VoxelPlate;
 
 #[derive(Default, Clone)]
@@ -10,7 +10,7 @@ pub struct VoxelStack {
 
 impl VoxelStack {
 
-    fn add_voxel(&mut self, voxel: Vec3) {
+    fn add_voxel(&mut self, voxel: BlockCoordinates) {
         let y = voxel.y as isize;
         self.internal
             .entry(y)
@@ -26,8 +26,8 @@ impl VoxelStack {
     }
 }
 
-impl From<Vec<Vec3>> for VoxelStack {
-    fn from(voxels: Vec<Vec3>) -> Self {
+impl From<Vec<BlockCoordinates>> for VoxelStack {
+    fn from(voxels: Vec<BlockCoordinates>) -> Self {
         let mut stack = VoxelStack::default();
 
         for voxel in voxels {

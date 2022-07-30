@@ -1,6 +1,6 @@
 use crate::voxel_sequence::VoxelSequence;
 use crate::voxel_stack::VoxelStack;
-use crate::Vec3;
+use crate::BlockCoordinates;
 
 pub fn merge_voxels(voxel_stack: VoxelStack) -> Vec<VoxelSequence> {
     let mut all_sequences = vec![];
@@ -76,7 +76,7 @@ fn stretch_sequences_by_z(
     plane_sequences
 }
 
-fn merge_voxels_x_row(mut row: Vec<Vec3>) -> Vec<VoxelSequence> {
+fn merge_voxels_x_row(mut row: Vec<BlockCoordinates>) -> Vec<VoxelSequence> {
     row.sort_by(|a, b| a.x.partial_cmp(&b.x).unwrap());
 
     let mut x_sequences = vec![];

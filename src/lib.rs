@@ -14,20 +14,22 @@ mod voxel_stack;
 
 #[derive(Clone, Default)]
 pub struct ExportParams {
-    pub start: Vec3,
-    pub end: Vec3,
+    pub start: BlockCoordinates,
+    pub end: BlockCoordinates,
     pub skip_blocks: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Default)]
-pub struct Vec3 {
+pub struct BlockCoordinates {
     pub x: isize,
     pub y: isize,
     pub z: isize,
 }
 
-pub fn vec3(x: isize, y: isize, z: isize) -> Vec3 {
-    Vec3 { x, y, z }
+impl BlockCoordinates {
+    pub fn new(x: isize, y: isize, z: isize) -> BlockCoordinates {
+        BlockCoordinates { x, y, z }
+    }
 }
 
 pub fn detect_collisions(lvl_path: &str, params: ExportParams) -> Vec<VoxelSequence> {
@@ -45,15 +47,18 @@ mod tests {
         let result = detect_collisions(
             "./assets/test_lvl",
             ExportParams {
-                start: vec3(1, -63, 1),
-                end: vec3(2, -63, 2),
+                start: BlockCoordinates::new(1, -63, 1),
+                end: BlockCoordinates::new(2, -63, 2),
                 ..Default::default()
             },
         );
 
         assert_eq!(
             result,
-            vec![VoxelSequence::new(vec3(1, -63, 1), vec3(2, -63, 2))]
+            vec![VoxelSequence::new(
+                BlockCoordinates::new(1, -63, 1),
+                BlockCoordinates::new(2, -63, 2)
+            )]
         );
     }
     #[test]
@@ -61,15 +66,18 @@ mod tests {
         let result = detect_collisions(
             "./assets/test_lvl",
             ExportParams {
-                start: vec3(1, -63, 5),
-                end: vec3(2, -60, 6),
+                start: BlockCoordinates::new(1, -63, 5),
+                end: BlockCoordinates::new(2, -60, 6),
                 ..Default::default()
             },
         );
 
         assert_eq!(
             result,
-            vec![VoxelSequence::new(vec3(1, -63, 5), vec3(1, -61, 5))]
+            vec![VoxelSequence::new(
+                BlockCoordinates::new(1, -63, 5),
+                BlockCoordinates::new(1, -61, 5)
+            )]
         );
     }
     #[test]
@@ -77,15 +85,18 @@ mod tests {
         let result = detect_collisions(
             "./assets/test_lvl",
             ExportParams {
-                start: vec3(1, -63, 8),
-                end: vec3(4, -60, 10),
+                start: BlockCoordinates::new(1, -63, 8),
+                end: BlockCoordinates::new(4, -60, 10),
                 ..Default::default()
             },
         );
 
         assert_eq!(
             result,
-            vec![VoxelSequence::new(vec3(1, -63, 8), vec3(2, -62, 9))]
+            vec![VoxelSequence::new(
+                BlockCoordinates::new(1, -63, 8),
+                BlockCoordinates::new(2, -62, 9)
+            )]
         );
     }
     #[test]
@@ -93,8 +104,8 @@ mod tests {
         let result = detect_collisions(
             "./assets/test_lvl",
             ExportParams {
-                start: vec3(1, -63, 11),
-                end: vec3(4, -60, 12),
+                start: BlockCoordinates::new(1, -63, 11),
+                end: BlockCoordinates::new(4, -60, 12),
                 ..Default::default()
             },
         );
@@ -102,29 +113,34 @@ mod tests {
         assert_eq!(
             result,
             vec![
-                VoxelSequence::new(vec3(1, -63, 11), vec3(2, -63, 11)),
-                VoxelSequence::new(vec3(1, -63, 12), vec3(1, -63, 12))
+                VoxelSequence::new(
+                    BlockCoordinates::new(1, -63, 11),
+                    BlockCoordinates::new(2, -63, 11)
+                ),
+                VoxelSequence::new(
+                    BlockCoordinates::new(1, -63, 12),
+                    BlockCoordinates::new(1, -63, 12)
+                )
             ]
         );
     }
     #[test]
-    fn detect_collisions_chess() {
+    fn detect_collisions_huge_area() {
         let result = detect_collisions(
             "./assets/test_lvl",
             ExportParams {
-                start: vec3(1, -63, 13),
-                end: vec3(4, -60, 15),
+                start: BlockCoordinates::new(1, -64, 1),
+                end: BlockCoordinates::new(100, -64, 100),
                 ..Default::default()
             },
         );
 
         assert_eq!(
             result,
-            vec![
-                VoxelSequence::new(vec3(1, -63, 14), vec3(1, -63, 14)),
-                VoxelSequence::new(vec3(3, -63, 14), vec3(3, -63, 14)),
-                VoxelSequence::new(vec3(2, -63, 15), vec3(2, -63, 15)),
-            ]
+            vec![VoxelSequence::new(
+                BlockCoordinates::new(1, -64, 1),
+                BlockCoordinates::new(100, -64, 100)
+            ),]
         );
     }
 }

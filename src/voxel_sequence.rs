@@ -1,14 +1,14 @@
-use crate::Vec3;
+use crate::BlockCoordinates;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub struct VoxelSequence {
-    pub start: Vec3,
-    pub end: Vec3,
+    pub start: BlockCoordinates,
+    pub end: BlockCoordinates,
 }
 
 impl VoxelSequence {
-    pub(crate) fn new(start: Vec3, end: Vec3) -> VoxelSequence {
+    pub(crate) fn new(start: BlockCoordinates, end: BlockCoordinates) -> VoxelSequence {
         VoxelSequence { start, end }
     }
 
@@ -20,11 +20,11 @@ impl VoxelSequence {
         self.end = other.end;
     }
 
-    pub fn start_position(&self) -> &Vec3 {
+    pub fn start_position(&self) -> &BlockCoordinates {
         &self.start
     }
 
-    pub fn end_position(&self) -> &Vec3 {
+    pub fn end_position(&self) -> &BlockCoordinates {
         &self.end
     }
 

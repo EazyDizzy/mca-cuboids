@@ -12,6 +12,7 @@ panic = "abort"
 fastnbt = "2" # for reading mc world
 fastanvil = "0.26.0" # for reading mc world
 serde = "1.0.136" # for serializing result
+range-set = "0.0.9"
 
 [dev-dependencies]
 criterion = "0.3.6"
@@ -19,7 +20,4 @@ pprof = { version = "0.10.0", features = ["criterion", "flamegraph"] }
 
 [[bench]]
 name = "read"
-harness = false
-[[bench]]
-name = "merge"
 harness = false

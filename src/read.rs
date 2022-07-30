@@ -5,7 +5,7 @@ use std::sync::mpsc::channel;
 use std::sync::Arc;
 use std::{cmp, fs, thread};
 
-use crate::{vec3, ExportParams, Vec3};
+use crate::{BlockCoordinates, ExportParams};
 use fastanvil::{Chunk, CurrentJavaChunk, Region};
 use fastnbt::from_bytes;
 
@@ -13,7 +13,7 @@ const CHUNK_BLOCKS_SIZE: usize = 16;
 const FILE_CHUNKS_SIZE: isize = 32;
 const FILE_BLOCKS_SIZE: isize = CHUNK_BLOCKS_SIZE as isize * FILE_CHUNKS_SIZE as isize;
 
-pub(crate) fn read_level(lvl_path: &str, params: ExportParams) -> Vec<Vec3> {
+pub(crate) fn read_level(lvl_path: &str, params: ExportParams) -> Vec<BlockCoordinates> {
     let needed_files = get_needed_filenames(&params);
 
     let paths = fs::read_dir(lvl_path).expect("Cannot read lvl dir");
@@ -61,7 +61,7 @@ pub(crate) fn read_level(lvl_path: &str, params: ExportParams) -> Vec<Vec3> {
     all_voxels
 }
 
-fn read_level_file(dir_entry: &DirEntry, params: &ExportParams) -> Vec<Vec3> {
+fn read_level_file(dir_entry: &DirEntry, params: &ExportParams) -> Vec<BlockCoordinates> {
     let mut voxels = vec![];
     let blocks_to_skip: Vec<&str> = params
         .skip_blocks
@@ -108,9 +108,9 @@ fn read_level_file(dir_entry: &DirEntry, params: &ExportParams) -> Vec<Vec3> {
         let chunk_x_range = x_base..=x_base + CHUNK_BLOCKS_SIZE as isize;
         let chunk_z_range = z_base..=z_base + CHUNK_BLOCKS_SIZE as isize;
 
-        let valid_chunk = (chunk_x_range.contains(x_range.start())
-            || chunk_x_range.contains(x_range.end()))
-            && (chunk_z_range.contains(z_range.start()) || chunk_z_range.contains(z_range.end()));
+        let valid_chunk = (x_range.start() < chunk_x_range.end()
+            && x_range.end() > chunk_x_range.start())
+            && (z_range.start() < chunk_z_range.end() && z_range.end() > chunk_z_range.start());
 
         if !valid_chunk {
             return;
@@ -136,7 +136,7 @@ fn read_level_file(dir_entry: &DirEntry, params: &ExportParams) -> Vec<Vec3> {
                                     && !blocks_to_skip.contains(&block.name())
                             })
                             .map(|_block| {
-                                let point = vec3(voxel_x, y, voxel_z);
+                                let point = BlockCoordinates::new(voxel_x, y, voxel_z);
 
                                 voxels.push(point);
                             });
@@ -207,20 +207,19 @@ mod tests {
         let result = read_level(
             "./assets/test_lvl",
             ExportParams {
-                start: vec3(1, -63, 1),
-                end: vec3(2, -63, 2),
+                start: BlockCoordinates::new(1, -63, 1),
+                end: BlockCoordinates::new(2, -63, 2),
                 ..Default::default()
             },
         );
         assert_eq!(
             result,
             vec![
-                vec3(1, -63, 1),
-                vec3(1, -63, 2),
-                vec3(2, -63, 1),
-                vec3(2, -63, 2),
+                BlockCoordinates::new(1, -63, 1),
+                BlockCoordinates::new(1, -63, 2),
+                BlockCoordinates::new(2, -63, 1),
+                BlockCoordinates::new(2, -63, 2),
             ]
-
         );
     }
     #[test]
@@ -228,14 +227,18 @@ mod tests {
         let result = read_level(
             "./assets/test_lvl",
             ExportParams {
-                start: vec3(1, -63, 5),
-                end: vec3(2, -60, 6),
+                start: BlockCoordinates::new(1, -63, 5),
+                end: BlockCoordinates::new(2, -60, 6),
                 ..Default::default()
             },
         );
         assert_eq!(
             result,
-            vec![vec3(1, -63, 5), vec3(1, -62, 5), vec3(1, -61, 5),]
+            vec![
+                BlockCoordinates::new(1, -63, 5),
+                BlockCoordinates::new(1, -62, 5),
+                BlockCoordinates::new(1, -61, 5),
+            ]
         );
     }
 
@@ -244,8 +247,8 @@ mod tests {
         let result = read_level(
             "./assets/test_lvl",
             ExportParams {
-                start: vec3(1, -63, 1),
-                end: vec3(2, -63, 2),
+                start: BlockCoordinates::new(1, -63, 1),
+                end: BlockCoordinates::new(2, -63, 2),
                 skip_blocks: vec!["minecraft:stone".to_owned()],
             },
         );
@@ -256,18 +259,18 @@ mod tests {
         let result = read_level(
             "./assets/test_lvl",
             ExportParams {
-                start: vec3(1, -64, 1),
-                end: vec3(2, -63, 2),
+                start: BlockCoordinates::new(1, -64, 1),
+                end: BlockCoordinates::new(2, -63, 2),
                 skip_blocks: vec!["minecraft:stone".to_owned()],
             },
         );
         assert_eq!(
             result,
             vec![
-                vec3(1, -64, 1),
-                vec3(1, -64, 2),
-                vec3(2, -64, 1),
-                vec3(2, -64, 2),
+                BlockCoordinates::new(1, -64, 1),
+                BlockCoordinates::new(1, -64, 2),
+                BlockCoordinates::new(2, -64, 1),
+                BlockCoordinates::new(2, -64, 2),
             ]
         );
     }
@@ -282,8 +285,8 @@ mod tests {
     #[test]
     fn get_needed_filenames_1() {
         let result = get_needed_filenames(&ExportParams {
-            start: vec3(-1, 0, -1),
-            end: vec3(1, 0, 1),
+            start: BlockCoordinates::new(-1, 0, -1),
+            end: BlockCoordinates::new(1, 0, 1),
             ..Default::default()
         });
 
@@ -300,8 +303,8 @@ mod tests {
     #[test]
     fn get_needed_filenames_0_0() {
         let result = get_needed_filenames(&ExportParams {
-            start: vec3(1, 0, 1),
-            end: vec3(2, 0, 2),
+            start: BlockCoordinates::new(1, 0, 1),
+            end: BlockCoordinates::new(2, 0, 2),
             ..Default::default()
         });
 
@@ -310,8 +313,8 @@ mod tests {
     #[test]
     fn get_needed_filenames_1_0() {
         let result = get_needed_filenames(&ExportParams {
-            start: vec3(513, 1, 1),
-            end: vec3(523, 1, 2),
+            start: BlockCoordinates::new(513, 1, 1),
+            end: BlockCoordinates::new(523, 1, 2),
             ..Default::default()
         });
 
@@ -320,8 +323,8 @@ mod tests {
     #[test]
     fn get_needed_filenames_0_1() {
         let result = get_needed_filenames(&ExportParams {
-            start: vec3(1, 1, 513),
-            end: vec3(2, 1, 523),
+            start: BlockCoordinates::new(1, 1, 513),
+            end: BlockCoordinates::new(2, 1, 523),
             ..Default::default()
         });
 
@@ -330,8 +333,8 @@ mod tests {
     #[test]
     fn get_needed_filenames_1_1() {
         let result = get_needed_filenames(&ExportParams {
-            start: vec3(513, 1, 513),
-            end: vec3(513, 1, 523),
+            start: BlockCoordinates::new(513, 1, 513),
+            end: BlockCoordinates::new(513, 1, 523),
             ..Default::default()
         });
 
@@ -340,8 +343,8 @@ mod tests {
     #[test]
     fn get_needed_filenames_minus_2_2() {
         let result = get_needed_filenames(&ExportParams {
-            start: vec3(-513, 1, -513),
-            end: vec3(-513, 1, -523),
+            start: BlockCoordinates::new(-513, 1, -513),
+            end: BlockCoordinates::new(-513, 1, -523),
             ..Default::default()
         });
 
