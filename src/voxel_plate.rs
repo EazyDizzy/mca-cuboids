@@ -1,10 +1,10 @@
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
 use crate::BlockCoordinates;
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Eq, PartialEq, Debug)]
 pub struct VoxelPlate {
-    internal: HashMap<isize, Vec<BlockCoordinates>>,
+    internal: FxHashMap<isize, Vec<BlockCoordinates>>,
 }
 
 impl VoxelPlate {

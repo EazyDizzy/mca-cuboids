@@ -2,6 +2,7 @@ use crate::voxel_sequence::VoxelSequence;
 use crate::voxel_stack::VoxelStack;
 use crate::BlockCoordinates;
 
+#[inline(never)]
 pub fn merge_voxels(voxel_stack: VoxelStack) -> Vec<VoxelSequence> {
     let mut all_sequences = vec![];
 

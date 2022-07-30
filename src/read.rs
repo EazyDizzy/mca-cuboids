@@ -5,7 +5,7 @@ use std::sync::mpsc::channel;
 use std::sync::Arc;
 use std::{cmp, fs, thread};
 
-use crate::{BlockCoordinates, ExportParams};
+use crate::{BlockCoordinates, ExportParams, VoxelStack};
 use fastanvil::{Chunk, CurrentJavaChunk, Region};
 use fastnbt::from_bytes;
 
@@ -13,7 +13,8 @@ const CHUNK_BLOCKS_SIZE: usize = 16;
 const FILE_CHUNKS_SIZE: isize = 32;
 const FILE_BLOCKS_SIZE: isize = CHUNK_BLOCKS_SIZE as isize * FILE_CHUNKS_SIZE as isize;
 
-pub(crate) fn read_level(lvl_path: &str, params: ExportParams) -> Vec<BlockCoordinates> {
+#[inline(never)]
+pub(crate) fn read_level(lvl_path: &str, params: ExportParams) -> VoxelStack {
     let needed_files = get_needed_filenames(&params);
 
     let paths = fs::read_dir(lvl_path).expect("Cannot read lvl dir");
@@ -46,11 +47,11 @@ pub(crate) fn read_level(lvl_path: &str, params: ExportParams) -> Vec<BlockCoord
         });
     }
 
-    let mut all_voxels = vec![];
     let mut received = 0;
+    let mut stack = VoxelStack::default();
 
-    for mut voxels in receiver {
-        all_voxels.append(&mut voxels);
+    for voxels in receiver {
+        stack.add_all(voxels);
         received += 1;
 
         if received == amount_of_files {
@@ -58,7 +59,7 @@ pub(crate) fn read_level(lvl_path: &str, params: ExportParams) -> Vec<BlockCoord
         }
     }
 
-    all_voxels
+    stack
 }
 
 fn read_level_file(dir_entry: &DirEntry, params: &ExportParams) -> Vec<BlockCoordinates> {
@@ -214,12 +215,12 @@ mod tests {
         );
         assert_eq!(
             result,
-            vec![
+            VoxelStack::from(vec![
                 BlockCoordinates::new(1, -63, 1),
                 BlockCoordinates::new(1, -63, 2),
                 BlockCoordinates::new(2, -63, 1),
                 BlockCoordinates::new(2, -63, 2),
-            ]
+            ])
         );
     }
     #[test]
@@ -234,11 +235,11 @@ mod tests {
         );
         assert_eq!(
             result,
-            vec![
+            VoxelStack::from(vec![
                 BlockCoordinates::new(1, -63, 5),
                 BlockCoordinates::new(1, -62, 5),
                 BlockCoordinates::new(1, -61, 5),
-            ]
+            ])
         );
     }
 
@@ -252,7 +253,7 @@ mod tests {
                 skip_blocks: vec!["minecraft:stone".to_owned()],
             },
         );
-        assert_eq!(result, vec![]);
+        assert_eq!(result, VoxelStack::from(vec![]));
     }
     #[test]
     fn read_level_skip_blocks_2() {
@@ -266,12 +267,12 @@ mod tests {
         );
         assert_eq!(
             result,
-            vec![
+            VoxelStack::from(vec![
                 BlockCoordinates::new(1, -64, 1),
                 BlockCoordinates::new(1, -64, 2),
                 BlockCoordinates::new(2, -64, 1),
                 BlockCoordinates::new(2, -64, 2),
-            ]
+            ])
         );
     }
 

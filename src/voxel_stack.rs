@@ -1,16 +1,21 @@
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 
-use crate::BlockCoordinates;
 use crate::voxel_plate::VoxelPlate;
+use crate::BlockCoordinates;
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Eq, PartialEq, Debug)]
 pub struct VoxelStack {
-    internal: HashMap<isize, VoxelPlate>,
+    internal: FxHashMap<isize, VoxelPlate>,
 }
 
 impl VoxelStack {
-
-    fn add_voxel(&mut self, voxel: BlockCoordinates) {
+    #[inline(never)]
+    pub(crate) fn add_all(&mut self, voxels: Vec<BlockCoordinates>) {
+        for v in voxels {
+            self.add_voxel(v);
+        }
+    }
+    pub(crate) fn add_voxel(&mut self, voxel: BlockCoordinates) {
         let y = voxel.y as isize;
         self.internal
             .entry(y)
@@ -29,10 +34,7 @@ impl VoxelStack {
 impl From<Vec<BlockCoordinates>> for VoxelStack {
     fn from(voxels: Vec<BlockCoordinates>) -> Self {
         let mut stack = VoxelStack::default();
-
-        for voxel in voxels {
-            stack.add_voxel(voxel);
-        }
+        stack.add_all(voxels);
 
         stack
     }

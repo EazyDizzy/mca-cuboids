@@ -33,8 +33,7 @@ impl BlockCoordinates {
 }
 
 pub fn detect_collisions(lvl_path: &str, params: ExportParams) -> Vec<VoxelSequence> {
-    let lvl = read::read_level(lvl_path, params);
-    let stack = VoxelStack::from(lvl);
+    let stack = read::read_level(lvl_path, params);
     merge_voxels(stack)
 }
 
