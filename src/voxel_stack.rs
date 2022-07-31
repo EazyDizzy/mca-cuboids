@@ -9,7 +9,6 @@ pub struct VoxelStack {
 }
 
 impl VoxelStack {
-    #[inline(never)]
     pub(crate) fn add_all(&mut self, voxels: Vec<BlockCoordinates>) {
         for v in voxels {
             self.add_voxel(v);

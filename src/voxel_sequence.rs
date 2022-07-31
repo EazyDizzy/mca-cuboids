@@ -12,7 +12,10 @@ impl VoxelSequence {
         VoxelSequence { start, end }
     }
 
-    pub fn expand_y_end(&mut self, other: Self) {
+    pub fn expand_start(&mut self, other: BlockCoordinates) {
+        self.start = other;
+    }
+    pub fn expand_end(&mut self, other: Self) {
         self.end = other.end;
     }
 
@@ -36,26 +39,10 @@ impl VoxelSequence {
     }
 
     pub fn has_z_end_on(&self, z: isize) -> bool {
-        let (.., end_z) = self.z_borders();
-
-        end_z == z
+        self.end.z == z
     }
 
     pub fn has_y_end_on(&self, y: isize) -> bool {
-        let (.., end_y) = self.y_borders();
-
-        end_y == y
-    }
-    pub fn y_borders(&self) -> (isize, isize) {
-        let start_y = self.start.y;
-        let end_y = self.end.y;
-
-        (start_y, end_y)
-    }
-    pub fn z_borders(&self) -> (isize, isize) {
-        let start_z = self.start.z;
-        let end_z = self.end.z;
-
-        (start_z, end_z)
+        self.end.y == y
     }
 }

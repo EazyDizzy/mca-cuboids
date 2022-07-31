@@ -13,7 +13,6 @@ const CHUNK_BLOCKS_SIZE: usize = 16;
 const FILE_CHUNKS_SIZE: isize = 32;
 const FILE_BLOCKS_SIZE: isize = CHUNK_BLOCKS_SIZE as isize * FILE_CHUNKS_SIZE as isize;
 
-#[inline(never)]
 pub(crate) fn read_level(lvl_path: &str, params: ExportParams) -> VoxelStack {
     let needed_files = get_needed_filenames(&params);
 

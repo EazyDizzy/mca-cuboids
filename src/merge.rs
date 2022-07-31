@@ -1,10 +1,12 @@
 use crate::voxel_sequence::VoxelSequence;
 use crate::voxel_stack::VoxelStack;
 use crate::BlockCoordinates;
+use rustc_hash::{FxHashMap, FxHasher};
+use std::collections::HashMap;
+use std::hash::BuildHasherDefault;
 
-#[inline(never)]
 pub fn merge_voxels(voxel_stack: VoxelStack) -> Vec<VoxelSequence> {
-    let mut all_sequences = vec![];
+    let mut all_sequences_by_end_y = FxHashMap::default();
 
     for (y, plate) in voxel_stack.plates() {
         let mut plane_sequences = vec![];
@@ -15,40 +17,45 @@ pub fn merge_voxels(voxel_stack: VoxelStack) -> Vec<VoxelSequence> {
             plane_sequences = stretch_sequences_by_z(row_sequences, plane_sequences, z);
         }
 
-        all_sequences = stretch_sequences_by_y(plane_sequences, all_sequences, y);
+        stretch_sequences_by_y(&mut all_sequences_by_end_y, plane_sequences, y);
     }
+    let mut all_sequences = vec![];
+    all_sequences_by_end_y.into_iter().for_each(|(.., seq)| {
+        all_sequences.extend(seq);
+    });
 
     all_sequences
 }
 
 fn stretch_sequences_by_y(
-    mut plane_sequences: Vec<VoxelSequence>,
-    mut all_sequences: Vec<VoxelSequence>,
+    all_sequences_by_end_y: &mut HashMap<isize, Vec<VoxelSequence>, BuildHasherDefault<FxHasher>>,
+    mut current: Vec<VoxelSequence>,
     y: isize,
-) -> Vec<VoxelSequence> {
-    let needed_y = y - 1;
-    let previous_layer_sequences = all_sequences
-        .iter_mut()
-        .filter(|s| s.has_y_end_on(needed_y))
-        .collect::<Vec<&mut VoxelSequence>>();
+) {
+    let prev = all_sequences_by_end_y.get_mut(&(y - 1));
 
-    for seq in previous_layer_sequences {
-        let same_new_seq = plane_sequences
-            .iter()
-            .enumerate()
-            .find(|(_, s)| s.same_x_size(seq) && s.same_z_size(seq));
+    if let Some(prev_sequences) = prev {
+        let mut to_remove = vec![];
+        prev_sequences.iter().enumerate().for_each(|(i, seq)| {
+            let same_new_seq = current
+                .iter_mut()
+                .find(|s| s.same_x_size(seq) && s.same_z_size(seq));
 
-        if let Some((i, ..)) = same_new_seq {
-            let d = plane_sequences.remove(i);
-            seq.expand_y_end(d);
-        }
+            if let Some(current_seq) = same_new_seq {
+                to_remove.push(i);
+                current_seq.expand_start(seq.start.clone());
+            }
+        });
+
+        to_remove.into_iter().rev().for_each(|i| {
+            prev_sequences.remove(i);
+        });
     }
 
-    all_sequences.extend(plane_sequences);
-
-    all_sequences
+    all_sequences_by_end_y.insert(y, current);
 }
 
+#[inline(never)]
 fn stretch_sequences_by_z(
     row_sequences: Vec<VoxelSequence>,
     mut plane_sequences: Vec<VoxelSequence>,
