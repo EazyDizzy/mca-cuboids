@@ -2,6 +2,10 @@
 name = "mca-cuboids"
 version = "0.1.0"
 edition = "2021"
+description = "merge blocks from mca files"
+repository = "https://github.com/EazyDizzy/mca-cuboids"
+keywords = ["mca", "minecraft"]
+license = "Apache-2.0/MIT"
 
 [profile.release]
 lto = true
