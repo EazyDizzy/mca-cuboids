@@ -6,6 +6,10 @@ description = "merge blocks from mca files"
 repository = "https://github.com/EazyDizzy/mca-cuboids"
 keywords = ["mca", "minecraft"]
 license = "Apache-2.0/MIT"
+include = [
+    "src/*.rs",
+    "README.md",
+]
 
 [profile.release]
 lto = true
