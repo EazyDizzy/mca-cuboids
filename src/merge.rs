@@ -1,19 +1,19 @@
-use crate::voxel_sequence::VoxelSequence;
-use crate::voxel_stack::VoxelStack;
+use crate::block_sequence::BlockSequence;
+use crate::block_stack::BlockStack;
 use crate::BlockCoordinates;
 use anyhow::Result;
 use rustc_hash::{FxHashMap, FxHasher};
 use std::collections::HashMap;
 use std::hash::BuildHasherDefault;
 
-pub fn merge_voxels(voxel_stack: VoxelStack) -> Result<Vec<VoxelSequence>> {
+pub fn merge_blocks(block_stack: BlockStack) -> Result<Vec<BlockSequence>> {
     let mut all_sequences_by_end_y = FxHashMap::default();
 
-    for (y, plate) in voxel_stack.plates() {
+    for (y, plate) in block_stack.plates() {
         let mut plane_sequences = vec![];
 
         for (z, row) in plate.rows() {
-            let row_sequences = merge_voxels_x_row(row);
+            let row_sequences = merge_blocks_x_row(row);
 
             plane_sequences = stretch_sequences_by_z(row_sequences, plane_sequences, z);
         }
@@ -29,8 +29,8 @@ pub fn merge_voxels(voxel_stack: VoxelStack) -> Result<Vec<VoxelSequence>> {
 }
 
 fn stretch_sequences_by_y(
-    all_sequences_by_end_y: &mut HashMap<isize, Vec<VoxelSequence>, BuildHasherDefault<FxHasher>>,
-    mut current: Vec<VoxelSequence>,
+    all_sequences_by_end_y: &mut HashMap<isize, Vec<BlockSequence>, BuildHasherDefault<FxHasher>>,
+    mut current: Vec<BlockSequence>,
     y: isize,
 ) {
     let prev = all_sequences_by_end_y.get_mut(&(y - 1));
@@ -58,14 +58,14 @@ fn stretch_sequences_by_y(
 
 #[inline(never)]
 fn stretch_sequences_by_z(
-    row_sequences: Vec<VoxelSequence>,
-    mut plane_sequences: Vec<VoxelSequence>,
+    row_sequences: Vec<BlockSequence>,
+    mut plane_sequences: Vec<BlockSequence>,
     z: isize,
-) -> Vec<VoxelSequence> {
+) -> Vec<BlockSequence> {
     let mut sequences_to_append = vec![];
-    let mut prev_row_sequences: Vec<&mut VoxelSequence> = plane_sequences
+    let mut prev_row_sequences: Vec<&mut BlockSequence> = plane_sequences
         .iter_mut()
-        .filter(|s: &&mut VoxelSequence| s.has_z_end_on(z - 1))
+        .filter(|s: &&mut BlockSequence| s.has_z_end_on(z - 1))
         .collect();
 
     for sequence in row_sequences {
@@ -85,31 +85,31 @@ fn stretch_sequences_by_z(
     plane_sequences
 }
 
-fn merge_voxels_x_row(mut row: Vec<BlockCoordinates>) -> Vec<VoxelSequence> {
+fn merge_blocks_x_row(mut row: Vec<BlockCoordinates>) -> Vec<BlockSequence> {
     row.sort_by(|a, b| a.x.partial_cmp(&b.x).unwrap());
 
     let mut x_sequences = vec![];
-    let mut start_voxel_index = 0;
-    let mut prev_voxel_index = 0;
+    let mut start_block_index = 0;
+    let mut prev_block_index = 0;
 
-    for (index, voxel) in row.iter().enumerate().skip(1) {
-        let prev_voxel = &row[prev_voxel_index];
-        let stop_concatenation = voxel.x != prev_voxel.x + 1;
+    for (index, block) in row.iter().enumerate().skip(1) {
+        let prev_block = &row[prev_block_index];
+        let stop_concatenation = block.x != prev_block.x + 1;
 
         if stop_concatenation {
-            x_sequences.push(VoxelSequence::new(
-                row[start_voxel_index].clone(),
-                row[prev_voxel_index].clone(),
+            x_sequences.push(BlockSequence::new(
+                row[start_block_index].clone(),
+                row[prev_block_index].clone(),
             ));
 
-            start_voxel_index = index;
+            start_block_index = index;
         }
 
-        prev_voxel_index = index;
+        prev_block_index = index;
     }
-    x_sequences.push(VoxelSequence::new(
-        row[start_voxel_index].clone(),
-        row[prev_voxel_index].clone(),
+    x_sequences.push(BlockSequence::new(
+        row[start_block_index].clone(),
+        row[prev_block_index].clone(),
     ));
 
     x_sequences

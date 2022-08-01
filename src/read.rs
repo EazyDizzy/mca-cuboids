@@ -6,7 +6,7 @@ use std::sync::mpsc::channel;
 use std::sync::Arc;
 use std::{cmp, fs, thread};
 
-use crate::{BlockCoordinates, ExportParams, VoxelStack};
+use crate::{BlockCoordinates, ExportParams, BlockStack};
 use fastanvil::{Chunk, CurrentJavaChunk, Region};
 use fastnbt::from_bytes;
 
@@ -14,7 +14,7 @@ const CHUNK_BLOCKS_SIZE: usize = 16;
 const FILE_CHUNKS_SIZE: isize = 32;
 const FILE_BLOCKS_SIZE: isize = CHUNK_BLOCKS_SIZE as isize * FILE_CHUNKS_SIZE as isize;
 
-pub(crate) fn read_level(lvl_path: &str, params: ExportParams) -> Result<VoxelStack> {
+pub(crate) fn read_level(lvl_path: &str, params: ExportParams) -> Result<BlockStack> {
     let needed_files = get_needed_filenames(&params);
 
     let paths = fs::read_dir(lvl_path).context("Cannot read lvl dir")?;
@@ -39,20 +39,20 @@ pub(crate) fn read_level(lvl_path: &str, params: ExportParams) -> Result<VoxelSt
         let own_sender = sender.clone();
 
         thread::spawn(move || {
-            let voxels = read_level_file(&dir_entry, &p).unwrap();
+            let blocks = read_level_file(&dir_entry, &p).unwrap();
 
             own_sender
-                .send(voxels)
+                .send(blocks)
                 .context("Cannot send parsed coordinates from thread")
                 .unwrap();
         });
     }
 
     let mut received = 0;
-    let mut stack = VoxelStack::default();
+    let mut stack = BlockStack::default();
 
-    for voxels in receiver {
-        stack.add_all(voxels);
+    for blocks in receiver {
+        stack.add_all(blocks);
         received += 1;
 
         if received == amount_of_files {
@@ -64,7 +64,7 @@ pub(crate) fn read_level(lvl_path: &str, params: ExportParams) -> Result<VoxelSt
 }
 
 fn read_level_file(dir_entry: &DirEntry, params: &ExportParams) -> Result<Vec<BlockCoordinates>> {
-    let mut voxels = vec![];
+    let mut blocks = vec![];
     let blocks_to_skip: Vec<&str> = params
         .skip_blocks
         .iter()
@@ -151,7 +151,7 @@ fn read_level_file(dir_entry: &DirEntry, params: &ExportParams) -> Result<Vec<Bl
                             .map(|_block| {
                                 let point = BlockCoordinates::new(block_x, y, block_z);
 
-                                voxels.push(point);
+                                blocks.push(point);
                             });
                     }
                 }
@@ -159,7 +159,7 @@ fn read_level_file(dir_entry: &DirEntry, params: &ExportParams) -> Result<Vec<Bl
         }
     }
 
-    Ok(voxels)
+    Ok(blocks)
 }
 
 fn get_chunk_ranges(
@@ -227,7 +227,7 @@ mod tests {
         );
         assert_eq!(
             result.unwrap(),
-            VoxelStack::from(vec![
+            BlockStack::from(vec![
                 BlockCoordinates::new(1, -63, 1),
                 BlockCoordinates::new(1, -63, 2),
                 BlockCoordinates::new(2, -63, 1),
@@ -247,7 +247,7 @@ mod tests {
         );
         assert_eq!(
             result.unwrap(),
-            VoxelStack::from(vec![
+            BlockStack::from(vec![
                 BlockCoordinates::new(1, -63, 5),
                 BlockCoordinates::new(1, -62, 5),
                 BlockCoordinates::new(1, -61, 5),
@@ -265,7 +265,7 @@ mod tests {
                 skip_blocks: vec!["minecraft:stone".to_owned()],
             },
         );
-        assert_eq!(result.unwrap(), VoxelStack::from(vec![]));
+        assert_eq!(result.unwrap(), BlockStack::from(vec![]));
     }
     #[test]
     fn read_level_skip_blocks_2() {
@@ -279,7 +279,7 @@ mod tests {
         );
         assert_eq!(
             result.unwrap(),
-            VoxelStack::from(vec![
+            BlockStack::from(vec![
                 BlockCoordinates::new(1, -64, 1),
                 BlockCoordinates::new(1, -64, 2),
                 BlockCoordinates::new(2, -64, 1),

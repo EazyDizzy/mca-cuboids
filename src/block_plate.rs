@@ -3,14 +3,14 @@ use rustc_hash::FxHashMap;
 use crate::BlockCoordinates;
 
 #[derive(Default, Clone, Eq, PartialEq, Debug)]
-pub struct VoxelPlate {
+pub struct BlockPlate {
     internal: FxHashMap<isize, Vec<BlockCoordinates>>,
 }
 
-impl VoxelPlate {
-    pub(crate) fn add_voxel(&mut self, voxel: BlockCoordinates) {
-        let z = voxel.z;
-        self.internal.entry(z).or_insert_with(Vec::new).push(voxel);
+impl BlockPlate {
+    pub(crate) fn add_block(&mut self, block: BlockCoordinates) {
+        let z = block.z;
+        self.internal.entry(z).or_insert_with(Vec::new).push(block);
     }
 
     pub(crate) fn rows(self) -> Vec<(isize, Vec<BlockCoordinates>)> {

@@ -2,14 +2,14 @@ use crate::BlockCoordinates;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
-pub struct VoxelSequence {
+pub struct BlockSequence {
     pub start: BlockCoordinates,
     pub end: BlockCoordinates,
 }
 
-impl VoxelSequence {
-    pub(crate) fn new(start: BlockCoordinates, end: BlockCoordinates) -> VoxelSequence {
-        VoxelSequence { start, end }
+impl BlockSequence {
+    pub(crate) fn new(start: BlockCoordinates, end: BlockCoordinates) -> BlockSequence {
+        BlockSequence { start, end }
     }
 
     pub fn expand_start(&mut self, other: BlockCoordinates) {
