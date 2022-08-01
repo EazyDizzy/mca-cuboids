@@ -8,6 +8,7 @@ keywords = ["mca", "minecraft"]
 license = "Apache-2.0/MIT"
 include = [
     "src/*.rs",
+    "benches",
     "README.md",
 ]
 
