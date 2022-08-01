@@ -1,11 +1,12 @@
 use crate::voxel_sequence::VoxelSequence;
 use crate::voxel_stack::VoxelStack;
 use crate::BlockCoordinates;
+use anyhow::Result;
 use rustc_hash::{FxHashMap, FxHasher};
 use std::collections::HashMap;
 use std::hash::BuildHasherDefault;
 
-pub fn merge_voxels(voxel_stack: VoxelStack) -> Vec<VoxelSequence> {
+pub fn merge_voxels(voxel_stack: VoxelStack) -> Result<Vec<VoxelSequence>> {
     let mut all_sequences_by_end_y = FxHashMap::default();
 
     for (y, plate) in voxel_stack.plates() {
@@ -24,7 +25,7 @@ pub fn merge_voxels(voxel_stack: VoxelStack) -> Vec<VoxelSequence> {
         all_sequences.extend(seq);
     });
 
-    all_sequences
+    Ok(all_sequences)
 }
 
 fn stretch_sequences_by_y(

@@ -1,3 +1,4 @@
+use anyhow::{Context, Result};
 use std::fs::{DirEntry, File};
 use std::ops::RangeInclusive;
 use std::os::unix::prelude::MetadataExt;
@@ -13,10 +14,10 @@ const CHUNK_BLOCKS_SIZE: usize = 16;
 const FILE_CHUNKS_SIZE: isize = 32;
 const FILE_BLOCKS_SIZE: isize = CHUNK_BLOCKS_SIZE as isize * FILE_CHUNKS_SIZE as isize;
 
-pub(crate) fn read_level(lvl_path: &str, params: ExportParams) -> VoxelStack {
+pub(crate) fn read_level(lvl_path: &str, params: ExportParams) -> Result<VoxelStack> {
     let needed_files = get_needed_filenames(&params);
 
-    let paths = fs::read_dir(lvl_path).expect("Cannot read lvl dir");
+    let paths = fs::read_dir(lvl_path).context("Cannot read lvl dir")?;
     let files: Vec<DirEntry> = paths
         .into_iter()
         .flatten()
@@ -38,11 +39,12 @@ pub(crate) fn read_level(lvl_path: &str, params: ExportParams) -> VoxelStack {
         let own_sender = sender.clone();
 
         thread::spawn(move || {
-            let voxels = read_level_file(&dir_entry, &p);
+            let voxels = read_level_file(&dir_entry, &p).unwrap();
 
             own_sender
                 .send(voxels)
-                .expect("Cannot send image from thread");
+                .context("Cannot send parsed coordinates from thread")
+                .unwrap();
         });
     }
 
@@ -58,10 +60,10 @@ pub(crate) fn read_level(lvl_path: &str, params: ExportParams) -> VoxelStack {
         }
     }
 
-    stack
+    Ok(stack)
 }
 
-fn read_level_file(dir_entry: &DirEntry, params: &ExportParams) -> Vec<BlockCoordinates> {
+fn read_level_file(dir_entry: &DirEntry, params: &ExportParams) -> Result<Vec<BlockCoordinates>> {
     let mut voxels = vec![];
     let blocks_to_skip: Vec<&str> = params
         .skip_blocks
@@ -73,28 +75,32 @@ fn read_level_file(dir_entry: &DirEntry, params: &ExportParams) -> Vec<BlockCoor
         dir_entry
             .path()
             .to_str()
-            .expect("Cannot convert file path to str")
+            .context("Cannot convert file path to str")?
             .to_string(),
         dir_entry
             .file_name()
             .to_str()
-            .expect("Cannot convert file name to str")
+            .context("Cannot convert file name to str")?
             .to_string(),
     );
 
-    let file = File::open(&path).unwrap_or_else(|_| panic!("Can't open file {}", &path));
+    let file = File::open(&path).context(format!("Cannot open file {}", &path))?;
     let d = filename[2..filename.len() - 4]
         .split(".")
         .collect::<Vec<&str>>();
-    let file_x = d[0].parse::<isize>().unwrap();
-    let file_z = d[1].parse::<isize>().unwrap();
+    let file_x = d[0]
+        .parse::<isize>()
+        .context(format!("File {} has wrong name", &path))?;
+    let file_z = d[1]
+        .parse::<isize>()
+        .context(format!("File {} has wrong name", &path))?;
     let (x_range, z_range) = get_chunk_ranges(file_x, file_z, &params);
 
-    let mut region = Region::from_stream(file).expect("Cannot create region from file.");
+    let mut region = Region::from_stream(file).context("Cannot create region from file.")?;
     let file_x_bonus = file_x * FILE_CHUNKS_SIZE * CHUNK_BLOCKS_SIZE as isize;
     let file_z_bonus = file_z * FILE_CHUNKS_SIZE * CHUNK_BLOCKS_SIZE as isize;
 
-    region.iter().flatten().for_each(|raw_chunk| {
+    for raw_chunk in region.iter().flatten() {
         let mut chunk_min_x = (raw_chunk.x * CHUNK_BLOCKS_SIZE) as isize;
         if file_x < 0 {
             chunk_min_x = -chunk_min_x + FILE_BLOCKS_SIZE;
@@ -123,11 +129,11 @@ fn read_level_file(dir_entry: &DirEntry, params: &ExportParams) -> Vec<BlockCoor
         let chunk_is_valid = x_is_valid && z_is_valid;
 
         if !chunk_is_valid {
-            return;
+            continue;
         }
 
         let chunk: CurrentJavaChunk =
-            from_bytes(raw_chunk.data.as_slice()).expect("Cannot parse chunk data.");
+            from_bytes(raw_chunk.data.as_slice()).context("Cannot parse chunk data.")?;
 
         for y in params.start.y..=params.end.y {
             for x in 0..CHUNK_BLOCKS_SIZE {
@@ -151,9 +157,9 @@ fn read_level_file(dir_entry: &DirEntry, params: &ExportParams) -> Vec<BlockCoor
                 }
             }
         }
-    });
+    }
 
-    voxels
+    Ok(voxels)
 }
 
 fn get_chunk_ranges(
@@ -220,7 +226,7 @@ mod tests {
             },
         );
         assert_eq!(
-            result,
+            result.unwrap(),
             VoxelStack::from(vec![
                 BlockCoordinates::new(1, -63, 1),
                 BlockCoordinates::new(1, -63, 2),
@@ -240,7 +246,7 @@ mod tests {
             },
         );
         assert_eq!(
-            result,
+            result.unwrap(),
             VoxelStack::from(vec![
                 BlockCoordinates::new(1, -63, 5),
                 BlockCoordinates::new(1, -62, 5),
@@ -259,7 +265,7 @@ mod tests {
                 skip_blocks: vec!["minecraft:stone".to_owned()],
             },
         );
-        assert_eq!(result, VoxelStack::from(vec![]));
+        assert_eq!(result.unwrap(), VoxelStack::from(vec![]));
     }
     #[test]
     fn read_level_skip_blocks_2() {
@@ -272,7 +278,7 @@ mod tests {
             },
         );
         assert_eq!(
-            result,
+            result.unwrap(),
             VoxelStack::from(vec![
                 BlockCoordinates::new(1, -64, 1),
                 BlockCoordinates::new(1, -64, 2),

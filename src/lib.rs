@@ -4,6 +4,7 @@ extern crate test;
 use crate::merge::merge_voxels;
 use crate::voxel_sequence::VoxelSequence;
 use crate::voxel_stack::VoxelStack;
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 mod merge;
@@ -32,8 +33,8 @@ impl BlockCoordinates {
     }
 }
 
-pub fn detect_collisions(lvl_path: &str, params: ExportParams) -> Vec<VoxelSequence> {
-    let stack = read::read_level(lvl_path, params);
+pub fn detect_collisions(lvl_path: &str, params: ExportParams) -> Result<Vec<VoxelSequence>> {
+    let stack = read::read_level(lvl_path, params)?;
     merge_voxels(stack)
 }
 
@@ -53,7 +54,7 @@ mod tests {
         );
 
         assert_eq!(
-            result,
+            result.unwrap(),
             vec![VoxelSequence::new(
                 BlockCoordinates::new(1, -63, 1),
                 BlockCoordinates::new(2, -63, 2)
@@ -72,7 +73,7 @@ mod tests {
         );
 
         assert_eq!(
-            result,
+            result.unwrap(),
             vec![VoxelSequence::new(
                 BlockCoordinates::new(1, -63, 5),
                 BlockCoordinates::new(1, -61, 5)
@@ -91,7 +92,7 @@ mod tests {
         );
 
         assert_eq!(
-            result,
+            result.unwrap(),
             vec![VoxelSequence::new(
                 BlockCoordinates::new(1, -63, 8),
                 BlockCoordinates::new(2, -62, 9)
@@ -110,7 +111,7 @@ mod tests {
         );
 
         assert_eq!(
-            result,
+            result.unwrap(),
             vec![
                 VoxelSequence::new(
                     BlockCoordinates::new(1, -63, 11),
