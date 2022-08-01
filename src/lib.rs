@@ -39,7 +39,7 @@ impl BlockCoordinates {
 ///
 /// Will return `Err` if `lvl_path` does not exist or the user does not have
 /// permission to read it.
-pub fn detect_collisions(lvl_path: &str, params: ExportParams) -> Result<Vec<BlockSequence>> {
+pub fn export_cuboids(lvl_path: &str, params: ExportParams) -> Result<Vec<BlockSequence>> {
     let stack = read::read_level(lvl_path, params)?;
 
     Ok(merge_blocks(stack))
@@ -50,8 +50,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn detect_collisions_2x2x1() {
-        let result = detect_collisions(
+    fn export_cuboids_2x2x1() {
+        let result = export_cuboids(
             "./assets/test_lvl",
             ExportParams {
                 start: BlockCoordinates::new(1, -63, 1),
@@ -69,8 +69,8 @@ mod tests {
         );
     }
     #[test]
-    fn detect_collisions_1x3x1() {
-        let result = detect_collisions(
+    fn export_cuboids_1x3x1() {
+        let result = export_cuboids(
             "./assets/test_lvl",
             ExportParams {
                 start: BlockCoordinates::new(1, -63, 5),
@@ -88,8 +88,8 @@ mod tests {
         );
     }
     #[test]
-    fn detect_collisions_2x2x2() {
-        let result = detect_collisions(
+    fn export_cuboids_2x2x2() {
+        let result = export_cuboids(
             "./assets/test_lvl",
             ExportParams {
                 start: BlockCoordinates::new(1, -63, 8),
@@ -107,8 +107,8 @@ mod tests {
         );
     }
     #[test]
-    fn detect_collisions_tetris() {
-        let result = detect_collisions(
+    fn export_cuboids_tetris() {
+        let result = export_cuboids(
             "./assets/test_lvl",
             ExportParams {
                 start: BlockCoordinates::new(1, -63, 11),
