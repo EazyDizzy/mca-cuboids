@@ -1,4 +1,5 @@
 # mca-cuboids
+[![crates.io](https://img.shields.io/crates/v/mca-cuboids.svg)](https://github.com/EazyDizzy/mca-cuboids)
 
 A simple tool to merge blocks from your minecraft world to as less
 amount of cuboids as possible.
