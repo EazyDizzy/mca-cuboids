@@ -1,17 +1,19 @@
+#![deny(clippy::all, clippy::pedantic, clippy::cognitive_complexity)]
+#![allow(clippy::cast_possible_wrap)]
 #![feature(test)]
 #[cfg(test)]
 extern crate test;
-use crate::merge::merge_blocks;
 use crate::block_sequence::BlockSequence;
 use crate::block_stack::BlockStack;
+use crate::merge::merge_blocks;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-mod merge;
-mod read;
 mod block_plate;
 pub mod block_sequence;
 mod block_stack;
+mod merge;
+mod read;
 
 #[derive(Clone, Default)]
 pub struct ExportParams {
@@ -28,14 +30,19 @@ pub struct BlockCoordinates {
 }
 
 impl BlockCoordinates {
+    #[must_use]
     pub fn new(x: isize, y: isize, z: isize) -> BlockCoordinates {
         BlockCoordinates { x, y, z }
     }
 }
-
+/// # Errors
+///
+/// Will return `Err` if `lvl_path` does not exist or the user does not have
+/// permission to read it.
 pub fn detect_collisions(lvl_path: &str, params: ExportParams) -> Result<Vec<BlockSequence>> {
     let stack = read::read_level(lvl_path, params)?;
-    merge_blocks(stack)
+
+    Ok(merge_blocks(stack))
 }
 
 #[cfg(test)]

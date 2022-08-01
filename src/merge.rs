@@ -1,12 +1,11 @@
 use crate::block_sequence::BlockSequence;
 use crate::block_stack::BlockStack;
 use crate::BlockCoordinates;
-use anyhow::Result;
 use rustc_hash::{FxHashMap, FxHasher};
 use std::collections::HashMap;
 use std::hash::BuildHasherDefault;
 
-pub fn merge_blocks(block_stack: BlockStack) -> Result<Vec<BlockSequence>> {
+pub(crate) fn merge_blocks(block_stack: BlockStack) -> Vec<BlockSequence> {
     let mut all_sequences_by_end_y = FxHashMap::default();
 
     for (y, plate) in block_stack.plates() {
@@ -21,11 +20,11 @@ pub fn merge_blocks(block_stack: BlockStack) -> Result<Vec<BlockSequence>> {
         stretch_sequences_by_y(&mut all_sequences_by_end_y, plane_sequences, y);
     }
     let mut all_sequences = vec![];
-    all_sequences_by_end_y.into_iter().for_each(|(.., seq)| {
+    for (.., seq) in all_sequences_by_end_y {
         all_sequences.extend(seq);
-    });
+    }
 
-    Ok(all_sequences)
+    all_sequences
 }
 
 fn stretch_sequences_by_y(
