@@ -41,5 +41,5 @@ for shape in collisions {
 
 Original
 ![img_1.png](assets/source.png)
-Result rendered with `bevy` + `rapier`(`CollisionShape::Cuboid` + `debug-3d` feature)
+Result rendered with `bevy` + `heron`(`CollisionShape::Cuboid` + `debug-3d` feature)
 ![img.png](assets/result.png)
