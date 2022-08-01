@@ -9,7 +9,7 @@ codegen-units = 1
 panic = "abort"
 
 [dependencies]
-fastnbt = "2" # for reading mc world
+fastnbt = "2.2.0" # for reading mc world
 fastanvil = "0.26.0" # for reading mc world
 serde = "1.0.136" # for serializing result
 rustc-hash = "1.1.0"

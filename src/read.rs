@@ -91,44 +91,51 @@ fn read_level_file(dir_entry: &DirEntry, params: &ExportParams) -> Vec<BlockCoor
     let (x_range, z_range) = get_chunk_ranges(file_x, file_z, &params);
 
     let mut region = Region::from_stream(file).expect("Cannot create region from file.");
+    let file_x_bonus = file_x * FILE_CHUNKS_SIZE * CHUNK_BLOCKS_SIZE as isize;
+    let file_z_bonus = file_z * FILE_CHUNKS_SIZE * CHUNK_BLOCKS_SIZE as isize;
+
     region.iter().flatten().for_each(|raw_chunk| {
-        let chunk_x = raw_chunk.x;
-        let chunk_z = raw_chunk.z;
-
-        let mut x_base = (chunk_x * CHUNK_BLOCKS_SIZE) as isize;
+        let mut chunk_min_x = (raw_chunk.x * CHUNK_BLOCKS_SIZE) as isize;
         if file_x < 0 {
-            x_base = -x_base;
+            chunk_min_x = -chunk_min_x + FILE_BLOCKS_SIZE;
         }
-        x_base += file_x * FILE_CHUNKS_SIZE * CHUNK_BLOCKS_SIZE as isize;
-        let mut z_base = (chunk_z * CHUNK_BLOCKS_SIZE) as isize;
+        chunk_min_x += file_x_bonus;
+        let mut chunk_min_z = (raw_chunk.z * CHUNK_BLOCKS_SIZE) as isize;
         if file_z < 0 {
-            z_base = -z_base;
+            chunk_min_z = -chunk_min_z + FILE_BLOCKS_SIZE;
         }
-        z_base += file_z * FILE_CHUNKS_SIZE * CHUNK_BLOCKS_SIZE as isize;
-        let chunk_x_range = x_base..=x_base + CHUNK_BLOCKS_SIZE as isize;
-        let chunk_z_range = z_base..=z_base + CHUNK_BLOCKS_SIZE as isize;
+        chunk_min_z += file_z_bonus;
 
-        let valid_chunk = (x_range.start() < chunk_x_range.end()
-            && x_range.end() > chunk_x_range.start())
-            && (z_range.start() < chunk_z_range.end() && z_range.end() > chunk_z_range.start());
+        let chunk_max_x = chunk_min_x + CHUNK_BLOCKS_SIZE as isize;
+        let chunk_max_z = chunk_min_z + CHUNK_BLOCKS_SIZE as isize;
+        let chunk_x_range = chunk_min_x..chunk_max_x;
+        let chunk_z_range = chunk_min_z..chunk_max_z;
 
-        if !valid_chunk {
+        let x_is_valid = chunk_x_range.contains(x_range.start())
+            || chunk_x_range.contains(x_range.end())
+            || x_range.contains(&chunk_x_range.start)
+            || x_range.contains(&chunk_x_range.end);
+        let z_is_valid = chunk_z_range.contains(z_range.start())
+            || chunk_z_range.contains(z_range.end())
+            || z_range.contains(&chunk_z_range.start)
+            || z_range.contains(&chunk_z_range.end);
+
+        let chunk_is_valid = x_is_valid && z_is_valid;
+
+        if !chunk_is_valid {
             return;
         }
 
-        let y_range = params.start.y..=params.end.y;
-
-        let bytes = raw_chunk.data;
         let chunk: CurrentJavaChunk =
-            from_bytes(bytes.as_slice()).expect("Cannot parse chunk data.");
+            from_bytes(raw_chunk.data.as_slice()).expect("Cannot parse chunk data.");
 
-        for y in y_range {
+        for y in params.start.y..=params.end.y {
             for x in 0..CHUNK_BLOCKS_SIZE {
                 for z in 0..CHUNK_BLOCKS_SIZE {
-                    let voxel_x = x_base + x as isize;
-                    let voxel_z = z_base + z as isize;
+                    let block_x = chunk_min_x + x as isize;
+                    let block_z = chunk_min_z + z as isize;
 
-                    if x_range.contains(&voxel_x) && z_range.contains(&voxel_z) {
+                    if x_range.contains(&block_x) && z_range.contains(&block_z) {
                         chunk
                             .block(x, y, z)
                             .filter(|block| {
@@ -136,7 +143,7 @@ fn read_level_file(dir_entry: &DirEntry, params: &ExportParams) -> Vec<BlockCoor
                                     && !blocks_to_skip.contains(&block.name())
                             })
                             .map(|_block| {
-                                let point = BlockCoordinates::new(voxel_x, y, voxel_z);
+                                let point = BlockCoordinates::new(block_x, y, block_z);
 
                                 voxels.push(point);
                             });
@@ -167,7 +174,7 @@ fn get_chunk_coordinate_ranges(
 ) -> RangeInclusive<isize> {
     if file_c < 0 {
         let min = cmp::max((file_c - 1) * FILE_BLOCKS_SIZE, start_c);
-        let max = cmp::max(file_c * FILE_BLOCKS_SIZE, end_c);
+        let max = cmp::min((file_c + 1) * FILE_BLOCKS_SIZE, end_c);
 
         min..=max
     } else {

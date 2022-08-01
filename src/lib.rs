@@ -123,23 +123,4 @@ mod tests {
             ]
         );
     }
-    #[test]
-    fn detect_collisions_huge_area() {
-        let result = detect_collisions(
-            "./assets/test_lvl",
-            ExportParams {
-                start: BlockCoordinates::new(1, -64, 1),
-                end: BlockCoordinates::new(100, -64, 100),
-                ..Default::default()
-            },
-        );
-
-        assert_eq!(
-            result,
-            vec![VoxelSequence::new(
-                BlockCoordinates::new(1, -64, 1),
-                BlockCoordinates::new(100, -64, 100)
-            ),]
-        );
-    }
 }
