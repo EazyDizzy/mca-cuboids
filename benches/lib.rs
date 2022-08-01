@@ -1,5 +1,5 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use mca_collisions::{export_cuboids, BlockCoordinates, ExportParams};
+use mca_cuboids::{export_cuboids, BlockCoordinates, ExportParams};
 use pprof::criterion::{Output, PProfProfiler};
 
 fn bench_export_cuboids(c: &mut Criterion) {

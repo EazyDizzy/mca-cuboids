@@ -3,18 +3,17 @@
 #![feature(test)]
 #[cfg(test)]
 extern crate test;
-use crate::block_sequence::BlockSequence;
+pub use crate::block_sequence::BlockSequence;
 use crate::block_stack::BlockStack;
 use crate::merge::merge_blocks;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 mod block_plate;
-pub mod block_sequence;
+mod block_sequence;
 mod block_stack;
 mod merge;
 mod read;
-
 #[derive(Clone, Default)]
 pub struct ExportParams {
     pub start: BlockCoordinates,
