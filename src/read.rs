@@ -56,7 +56,7 @@ pub(crate) fn read_level(lvl_path: &str, params: ExportParams) -> Result<BlockSt
 }
 
 fn read_level_file(dir_entry: &DirEntry, params: &ExportParams) -> Result<Vec<BlockCoordinates>> {
-    let mut blocks = vec![];
+    // let mut blocks = vec![];
     let blocks_to_skip: Vec<&str> = params
         .skip_blocks
         .iter()
@@ -91,6 +91,9 @@ fn read_level_file(dir_entry: &DirEntry, params: &ExportParams) -> Result<Vec<Bl
     let mut region = Region::from_stream(file).context("Cannot create region from file.")?;
     let file_min_x = file_x * FILE_CHUNKS_SIZE * CHUNK_BLOCKS_SIZE as isize;
     let file_min_z = file_z * FILE_CHUNKS_SIZE * CHUNK_BLOCKS_SIZE as isize;
+    let y_range_len = range_len(&(params.start.y..=params.end.y));
+    let mut blocks =
+        Vec::with_capacity(range_len(&x_range) * range_len(&z_range) * (y_range_len / 2));
 
     for raw_chunk in region.iter().flatten() {
         let mut chunk_min_x = (raw_chunk.x * CHUNK_BLOCKS_SIZE) as isize;
@@ -209,6 +212,17 @@ fn get_needed_filenames(params: &ExportParams) -> Vec<String> {
         needed_files.push(format!("r.{}.{}.mca", start_x, start_z));
     }
     needed_files
+}
+fn range_len(range: &RangeInclusive<isize>) -> usize {
+    let len = if *range.start() >= 0 {
+        range.end() - range.start() + 1
+    } else if *range.end() >= 0 {
+        range.end() + range.start().abs() + 1
+    } else {
+        range.start().abs() + range.end() + 1
+    };
+
+    len as usize
 }
 
 #[cfg(test)]
@@ -362,5 +376,11 @@ mod tests {
         });
 
         assert_eq!(result, vec![String::from("r.-2.-2.mca")]);
+    }
+
+    fn range_len_1() {
+        assert_eq!(range_len(&(0..=5)), 6);
+        assert_eq!(range_len(&(-5..=5)), 11);
+        assert_eq!(range_len(&(-10..=-5)), 6);
     }
 }
