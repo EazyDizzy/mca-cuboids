@@ -48,14 +48,13 @@ fn stretch_sequences_by_y(
         });
 
         to_remove.into_iter().rev().for_each(|i| {
-            prev_sequences.remove(i);
+            prev_sequences.swap_remove(i);
         });
     }
 
     all_sequences_by_end_y.insert(y, current);
 }
 
-#[inline(never)]
 fn stretch_sequences_by_z(
     row_sequences: Vec<BlockSequence>,
     mut plane_sequences: Vec<BlockSequence>,
@@ -89,27 +88,64 @@ fn merge_blocks_x_row(mut row: Vec<BlockCoordinates>) -> Vec<BlockSequence> {
 
     let mut x_sequences = vec![];
     let mut start_block_index = 0;
-    let mut prev_block_index = 0;
 
     for (index, block) in row.iter().enumerate().skip(1) {
-        let prev_block = &row[prev_block_index];
+        let prev_block = &row[index - 1];
         let stop_concatenation = block.x != prev_block.x + 1;
 
         if stop_concatenation {
             x_sequences.push(BlockSequence::new(
                 row[start_block_index].clone(),
-                row[prev_block_index].clone(),
+                row[index - 1].clone(),
             ));
 
             start_block_index = index;
         }
-
-        prev_block_index = index;
     }
     x_sequences.push(BlockSequence::new(
         row[start_block_index].clone(),
-        row[prev_block_index].clone(),
+        row[row.len() - 1].clone(),
     ));
 
     x_sequences
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn merge_blocks_x_row_simple() {
+        let b = |x| -> BlockCoordinates { BlockCoordinates::new(x, 0, 0) };
+        let blocks = vec![b(0), b(1), b(2), b(3), b(4)];
+        let result = merge_blocks_x_row(blocks);
+
+        assert_eq!(
+            result,
+            vec![BlockSequence::new(
+                BlockCoordinates::new(0, 0, 0),
+                BlockCoordinates::new(4, 0, 0)
+            )]
+        );
+    }
+    #[test]
+    fn merge_blocks_x_row_multiple() {
+        let b = |x| -> BlockCoordinates { BlockCoordinates::new(x, 0, 0) };
+        let blocks = vec![b(0), b(1), b(3), b(4)];
+        let result = merge_blocks_x_row(blocks);
+
+        assert_eq!(
+            result,
+            vec![
+                BlockSequence::new(
+                    BlockCoordinates::new(0, 0, 0),
+                    BlockCoordinates::new(1, 0, 0)
+                ),
+                BlockSequence::new(
+                    BlockCoordinates::new(3, 0, 0),
+                    BlockCoordinates::new(4, 0, 0)
+                )
+            ]
+        );
+    }
 }

@@ -1,8 +1,10 @@
 #![deny(clippy::all, clippy::pedantic, clippy::cognitive_complexity)]
 #![allow(clippy::cast_possible_wrap)]
 #![feature(test)]
+
 #[cfg(test)]
 extern crate test;
+
 pub use crate::block_sequence::BlockSequence;
 use crate::block_stack::BlockStack;
 use crate::merge::merge_blocks;
