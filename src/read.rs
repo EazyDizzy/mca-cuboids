@@ -91,7 +91,7 @@ fn read_level_file(dir_entry: &DirEntry, params: &ExportParams) -> Result<Vec<Bl
     let mut region = Region::from_stream(file).context("Cannot create region from file.")?;
     let file_min_x = file_x * FILE_CHUNKS_SIZE * CHUNK_BLOCKS_SIZE as i32;
     let file_min_z = file_z * FILE_CHUNKS_SIZE * CHUNK_BLOCKS_SIZE as i32;
-    let y_range_len = range_len(&(params.start.y..=params.end.y));
+    let y_range_len = range_len_y(&(params.start.y..=params.end.y));
     let mut blocks =
         Vec::with_capacity(range_len(&x_range) * range_len(&z_range) * (y_range_len / 2));
 
@@ -209,6 +209,17 @@ fn get_needed_filenames(params: &ExportParams) -> Vec<String> {
     needed_files
 }
 fn range_len(range: &RangeInclusive<i32>) -> usize {
+    let len = if *range.start() >= 0 {
+        range.end() - range.start() + 1
+    } else if *range.end() >= 0 {
+        range.end() + range.start().abs() + 1
+    } else {
+        range.start().abs() + range.end() + 1
+    };
+
+    len as usize
+}
+fn range_len_y(range: &RangeInclusive<i16>) -> usize {
     let len = if *range.start() >= 0 {
         range.end() - range.start() + 1
     } else if *range.end() >= 0 {

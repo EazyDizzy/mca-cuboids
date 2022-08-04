@@ -24,13 +24,13 @@ pub struct ExportParams {
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Default)]
 pub struct BlockCoordinates {
     pub x: i32,
-    pub y: i32,
+    pub y: i16,
     pub z: i32,
 }
 
 impl BlockCoordinates {
     #[must_use]
-    pub fn new(x: i32, y: i32, z: i32) -> BlockCoordinates {
+    pub fn new(x: i32, y: i16, z: i32) -> BlockCoordinates {
         BlockCoordinates { x, y, z }
     }
 }
