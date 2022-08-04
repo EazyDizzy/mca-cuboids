@@ -59,7 +59,7 @@ fn stretch_sequences_by_y(
 fn stretch_sequences_by_z(
     row_sequences: Vec<BlockSequence>,
     mut plane_sequences: Vec<BlockSequence>,
-    z: isize,
+    z: i32,
 ) -> Vec<BlockSequence> {
     let mut sequences_to_append = vec![];
     let mut prev_row_sequences: Vec<&mut BlockSequence> = plane_sequences

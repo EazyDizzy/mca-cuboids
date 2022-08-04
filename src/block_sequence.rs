@@ -30,7 +30,7 @@ impl BlockSequence {
         other.start.z == self.start.z && other.end.z == self.end.z
     }
 
-    pub(crate) fn has_z_end_on(&self, z: isize) -> bool {
+    pub(crate) fn has_z_end_on(&self, z: i32) -> bool {
         self.end.z == z
     }
 }

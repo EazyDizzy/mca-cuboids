@@ -4,7 +4,7 @@ use crate::BlockCoordinates;
 
 #[derive(Default, Clone, Eq, PartialEq, Debug)]
 pub struct BlockPlate {
-    internal: FxHashMap<isize, Vec<BlockCoordinates>>,
+    internal: FxHashMap<i32, Vec<BlockCoordinates>>,
 }
 
 impl BlockPlate {
@@ -13,8 +13,8 @@ impl BlockPlate {
         self.internal.entry(z).or_insert_with(Vec::new).push(block);
     }
 
-    pub(crate) fn rows(self) -> Vec<(isize, Vec<BlockCoordinates>)> {
-        let mut rows: Vec<(isize, Vec<BlockCoordinates>)> = self.internal.into_iter().collect();
+    pub(crate) fn rows(self) -> Vec<(i32, Vec<BlockCoordinates>)> {
+        let mut rows: Vec<(i32, Vec<BlockCoordinates>)> = self.internal.into_iter().collect();
         rows.sort_by(|(z1, ..), (z2, ..)| z1.cmp(z2));
 
         rows

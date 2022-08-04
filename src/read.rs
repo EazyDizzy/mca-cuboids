@@ -11,8 +11,8 @@ use fastanvil::{Chunk, CurrentJavaChunk, Region};
 use fastnbt::from_bytes;
 
 const CHUNK_BLOCKS_SIZE: usize = 16;
-const FILE_CHUNKS_SIZE: isize = 32;
-const FILE_BLOCKS_SIZE: isize = CHUNK_BLOCKS_SIZE as isize * FILE_CHUNKS_SIZE;
+const FILE_CHUNKS_SIZE: i32 = 32;
+const FILE_BLOCKS_SIZE: i32 = CHUNK_BLOCKS_SIZE as i32 * FILE_CHUNKS_SIZE;
 
 pub(crate) fn read_level(lvl_path: &str, params: ExportParams) -> Result<BlockStack> {
     let needed_filenames = get_needed_filenames(&params);
@@ -81,27 +81,27 @@ fn read_level_file(dir_entry: &DirEntry, params: &ExportParams) -> Result<Vec<Bl
         .split('.')
         .collect::<Vec<&str>>();
     let file_x = d[0]
-        .parse::<isize>()
+        .parse::<i32>()
         .context(format!("File {} has wrong name", &filepath))?;
     let file_z = d[1]
-        .parse::<isize>()
+        .parse::<i32>()
         .context(format!("File {} has wrong name", &filepath))?;
     let (x_range, z_range) = get_chunk_xz_ranges(file_x, file_z, params);
 
     let mut region = Region::from_stream(file).context("Cannot create region from file.")?;
-    let file_min_x = file_x * FILE_CHUNKS_SIZE * CHUNK_BLOCKS_SIZE as isize;
-    let file_min_z = file_z * FILE_CHUNKS_SIZE * CHUNK_BLOCKS_SIZE as isize;
+    let file_min_x = file_x * FILE_CHUNKS_SIZE * CHUNK_BLOCKS_SIZE as i32;
+    let file_min_z = file_z * FILE_CHUNKS_SIZE * CHUNK_BLOCKS_SIZE as i32;
     let y_range_len = range_len(&(params.start.y..=params.end.y));
     let mut blocks =
         Vec::with_capacity(range_len(&x_range) * range_len(&z_range) * (y_range_len / 2));
 
     for raw_chunk in region.iter().flatten() {
-        let mut chunk_min_x = (raw_chunk.x * CHUNK_BLOCKS_SIZE) as isize;
+        let mut chunk_min_x = (raw_chunk.x * CHUNK_BLOCKS_SIZE) as i32;
         if file_x < 0 {
             chunk_min_x = -chunk_min_x + FILE_BLOCKS_SIZE;
         }
         chunk_min_x += file_min_x;
-        let mut chunk_min_z = (raw_chunk.z * CHUNK_BLOCKS_SIZE) as isize;
+        let mut chunk_min_z = (raw_chunk.z * CHUNK_BLOCKS_SIZE) as i32;
         if file_z < 0 {
             chunk_min_z = -chunk_min_z + FILE_BLOCKS_SIZE;
         }
@@ -117,13 +117,13 @@ fn read_level_file(dir_entry: &DirEntry, params: &ExportParams) -> Result<Vec<Bl
         for y in params.start.y..=params.end.y {
             for x in 0..CHUNK_BLOCKS_SIZE {
                 for z in 0..CHUNK_BLOCKS_SIZE {
-                    let block_x = chunk_min_x + x as isize;
-                    let block_z = chunk_min_z + z as isize;
+                    let block_x = chunk_min_x + x as i32;
+                    let block_z = chunk_min_z + z as i32;
 
                     if x_range.contains(&block_x)
                         && z_range.contains(&block_z)
                         && chunk
-                            .block(x, y, z)
+                            .block(x, y as isize, z)
                             .filter(|block| {
                                 block.name() != "minecraft:air"
                                     && !blocks_to_skip.contains(&block.name())
@@ -143,13 +143,13 @@ fn read_level_file(dir_entry: &DirEntry, params: &ExportParams) -> Result<Vec<Bl
 }
 
 fn should_export_chunk(
-    x_range: &RangeInclusive<isize>,
-    z_range: &RangeInclusive<isize>,
-    chunk_min_x: isize,
-    chunk_min_z: isize,
+    x_range: &RangeInclusive<i32>,
+    z_range: &RangeInclusive<i32>,
+    chunk_min_x: i32,
+    chunk_min_z: i32,
 ) -> bool {
-    let chunk_max_x = chunk_min_x + CHUNK_BLOCKS_SIZE as isize;
-    let chunk_max_z = chunk_min_z + CHUNK_BLOCKS_SIZE as isize;
+    let chunk_max_x = chunk_min_x + CHUNK_BLOCKS_SIZE as i32;
+    let chunk_max_z = chunk_min_z + CHUNK_BLOCKS_SIZE as i32;
     let chunk_x_range = chunk_min_x..chunk_max_x;
     let chunk_z_range = chunk_min_z..chunk_max_z;
 
@@ -166,21 +166,17 @@ fn should_export_chunk(
 }
 
 fn get_chunk_xz_ranges(
-    file_x: isize,
-    file_z: isize,
+    file_x: i32,
+    file_z: i32,
     params: &ExportParams,
-) -> (RangeInclusive<isize>, RangeInclusive<isize>) {
+) -> (RangeInclusive<i32>, RangeInclusive<i32>) {
     let x_range = get_chunk_coordinate_ranges(file_x, params.start.x, params.end.x);
     let z_range = get_chunk_coordinate_ranges(file_z, params.start.z, params.end.z);
 
     (x_range, z_range)
 }
 
-fn get_chunk_coordinate_ranges(
-    file_c: isize,
-    start_c: isize,
-    end_c: isize,
-) -> RangeInclusive<isize> {
+fn get_chunk_coordinate_ranges(file_c: i32, start_c: i32, end_c: i32) -> RangeInclusive<i32> {
     if file_c < 0 {
         let min = cmp::max((file_c - 1) * FILE_BLOCKS_SIZE, start_c);
         let max = cmp::min((file_c + 1) * FILE_BLOCKS_SIZE, end_c);
@@ -196,8 +192,7 @@ fn get_chunk_coordinate_ranges(
 
 fn get_needed_filenames(params: &ExportParams) -> Vec<String> {
     let mut needed_files = vec![];
-    let get_file_index =
-        |c: isize| -> isize { (c as f32 / FILE_BLOCKS_SIZE as f32).floor() as isize };
+    let get_file_index = |c: i32| -> i32 { (c as f32 / FILE_BLOCKS_SIZE as f32).floor() as i32 };
     let start_x = get_file_index(params.start.x);
     let start_z = get_file_index(params.start.z);
     let end_x = get_file_index(params.end.x);
@@ -213,7 +208,7 @@ fn get_needed_filenames(params: &ExportParams) -> Vec<String> {
     }
     needed_files
 }
-fn range_len(range: &RangeInclusive<isize>) -> usize {
+fn range_len(range: &RangeInclusive<i32>) -> usize {
     let len = if *range.start() >= 0 {
         range.end() - range.start() + 1
     } else if *range.end() >= 0 {
@@ -378,6 +373,7 @@ mod tests {
         assert_eq!(result, vec![String::from("r.-2.-2.mca")]);
     }
 
+    #[test]
     fn range_len_1() {
         assert_eq!(range_len(&(0..=5)), 6);
         assert_eq!(range_len(&(-5..=5)), 11);
