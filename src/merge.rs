@@ -14,7 +14,7 @@ pub(crate) fn merge_blocks(block_stack: BlockStack) -> Vec<BlockSequence> {
         for (z, row) in plate.rows() {
             let row_sequences = merge_blocks_x_row(row);
 
-            plane_sequences = stretch_sequences_by_z(row_sequences, plane_sequences, z);
+            stretch_sequences_by_z(row_sequences, &mut plane_sequences, z);
         }
 
         stretch_sequences_by_y(&mut all_sequences_by_end_y, plane_sequences, y);
@@ -35,20 +35,17 @@ fn stretch_sequences_by_y(
     let prev = all_sequences_by_end_y.get_mut(&(y - 1));
 
     if let Some(prev_sequences) = prev {
-        let mut to_remove = vec![];
-        prev_sequences.iter().enumerate().for_each(|(i, seq)| {
+        prev_sequences.retain(|seq| {
             let same_new_seq = current
                 .iter_mut()
                 .find(|s| s.same_x_size(seq) && s.same_z_size(seq));
 
             if let Some(current_seq) = same_new_seq {
-                to_remove.push(i);
                 current_seq.expand_start(seq.start.clone());
+                false
+            } else {
+                true
             }
-        });
-
-        to_remove.into_iter().rev().for_each(|i| {
-            prev_sequences.swap_remove(i);
         });
     }
 
@@ -57,30 +54,31 @@ fn stretch_sequences_by_y(
 
 fn stretch_sequences_by_z(
     row_sequences: Vec<BlockSequence>,
-    mut plane_sequences: Vec<BlockSequence>,
+    plane_sequences: &mut Vec<BlockSequence>,
     z: i32,
-) -> Vec<BlockSequence> {
-    let mut sequences_to_append = vec![];
+) {
     let mut prev_row_sequences: Vec<&mut BlockSequence> = plane_sequences
         .iter_mut()
         .filter(|s: &&mut BlockSequence| s.has_z_end_on(z - 1))
         .collect();
 
-    for sequence in row_sequences {
-        let same_sequence = prev_row_sequences
-            .iter_mut()
-            .find(|s| s.same_x_size(&sequence));
+    let unique_sequences: Vec<BlockSequence> = row_sequences
+        .into_iter()
+        .filter_map(|sequence| {
+            let same_sequence = prev_row_sequences
+                .iter_mut()
+                .find(|s| s.same_x_size(&sequence));
 
-        if let Some(same) = same_sequence {
-            same.expand_z_end(sequence);
-        } else {
-            sequences_to_append.push(sequence);
-        }
-    }
+            if let Some(same) = same_sequence {
+                same.expand_z_end(sequence);
+                None
+            } else {
+                Some(sequence)
+            }
+        })
+        .collect();
 
-    plane_sequences.append(&mut sequences_to_append);
-
-    plane_sequences
+    plane_sequences.extend(unique_sequences);
 }
 
 fn merge_blocks_x_row(mut row: Vec<BlockCoordinates>) -> Vec<BlockSequence> {
