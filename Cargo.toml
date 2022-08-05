@@ -1,6 +1,6 @@
 [package]
 name = "mca-cuboids"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "merge blocks from mca files"
 repository = "https://github.com/EazyDizzy/mca-cuboids"
